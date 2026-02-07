@@ -1,0 +1,72 @@
+name: Discord Stats Update
+on: [push]
+
+jobs:
+  notify-stats:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 
+
+      - name: Calculate and Send Stats
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          STATS=$(git diff --numstat HEAD~1 HEAD | awk '{add+=$1; rem+=$2; files++} END {printf "+%s -%s (%s files)", add+0, rem+0, files+0}')
+          
+          COMMIT_MSG=$(git log -1 --pretty=%s) 
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ) 
+
+          PAYLOAD=$(jq -n \
+            --arg stats "$STATS" \
+            --arg msg "$COMMIT_MSG" \
+            --arg hash "$COMMIT_HASH" \
+            --arg actor "$GITHUB_ACTOR" \
+            --arg repo "$GITHUB_REPOSITORY" \
+            --arg branch "$GITHUB_REF_NAME" \
+            --arg timestamp "$TIMESTAMP" \
+            '{
+              username: "GitHub Stats",
+              avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+              embeds: [{
+                color: 3066993,
+                author: {
+                  name: $actor,
+                  icon_url: ("https://github.com/" + $actor + ".png"),
+                  url: ("https://github.com/" + $actor)
+                },
+                title: ("🚀 New Push to " + $branch),
+                url: ("https://github.com/" + $repo + "/commit/" + $hash),
+                description: ("[`" + $hash + "`](https://github.com/" + $repo + "/commit/" + $hash + ") " + $msg + "\n\n**Changes:** `" + $stats + "`"),
+                fields: [
+                  {
+                    name: "Repository",
+                    value: ("[" + $repo + "](https://github.com/" + $repo + ")"),
+                    inline: true
+                  },
+                  {
+                    name: "Branch",
+                    value: ("[" + $branch + "](https://github.com/" + $repo + "/tree/" + $branch + ")"),
+                    inline: true
+                  },
+                  {
+                    name: "Pusher",
+                    value: $actor,
+                    inline: true
+                  }
+                ],
+                footer: {
+                  text: "GitHub Push Event",
+                },
+                timestamp: $timestamp
+              }]
+            }')
+
+          curl -H "Content-Type: application/json" \
+               -d "$PAYLOAD" \
+               $DISCORD_WEBHOOK
