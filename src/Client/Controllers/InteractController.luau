@@ -75,7 +75,7 @@ UserInputService.InputBegan:Connect(function(input, gp)
 	elseif object:HasTag("Lightbulbs") then
 		LightController.Grab()
 	elseif object:HasTag("Light") then
-		LightController.Replace(object)
+		LightController.Replace(object :: any)
 	end
 end)
 

@@ -10,7 +10,7 @@ type Light = {
 local TW_ON = TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 local TW_OFF = TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.In)
 local BRIGTHNESS = 1.8
-local CHANCE_TO_BREAK_DEFAULT = 0.1
+local CHANCE_TO_BREAK_DEFAULT = 0.05
 
 local Lights = CollectionService:GetTagged("Light") :: { Light }
 local LightbulbCages = CollectionService:GetTagged("Lightbulbs")[1]
