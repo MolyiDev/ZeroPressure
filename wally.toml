@@ -1,0 +1,14 @@
+[package]
+name = "molyi/zeropressure"
+version = "0.1.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+
+[dependencies]
+Fluid = "ffrostfall/fluid@0.6.4"
+Promise = "arxkdev/typed-promise@4.0.2"
+Butler = "molyidev/butler@1.2.2"
+Ignis = "molyidev/ignis@0.1.2"
+Signal = "molyidev/signal@1.0.3"
+jecs = "ukendio/jecs@0.9.0"
+t = "osyrisrblx/t@3.1.1"
