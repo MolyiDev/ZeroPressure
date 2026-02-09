@@ -15,8 +15,8 @@ local WATER_MOVE_SPEED = 2
 local WAVE_AMPLITUDE = 0.0001
 local WAVE_FREQUENCY = 1.2
 local WAVE_SCALE = 3.5
-local MIN_WATER_LEVEL = -5.3
-local MAX_WATER_LEVEL = 2
+local MIN_WATER_LEVEL = -3.06
+local MAX_WATER_LEVEL = 1.5
 
 local WaterMesh
 local WaterMeshPart
@@ -31,6 +31,7 @@ local WaterController = {}
 WaterController.MAX_WATER_LEVEL = MAX_WATER_LEVEL
 WaterController.MIN_WATER_LEVEL = MIN_WATER_LEVEL
 WaterController.WaterLevel = MIN_WATER_LEVEL
+WaterController.IsRiseActive = false
 WaterController.RiseSpeed = 0
 
 local function AdjustRiseSpeed(amount)
@@ -121,8 +122,8 @@ local function CreateWaterMesh()
 	WaterMeshPart.Material = Enum.Material.Glass
 	WaterMeshPart.Transparency = 0.4
 	WaterMeshPart.Color = Color3.fromRGB(46, 119, 153)
-	WaterMeshPart.Size = Vector3.new(planeSize * 2, 1, planeSize * 2)
-	WaterMeshPart.CFrame = CFrame.new(0, MIN_WATER_LEVEL, 0)
+	WaterMeshPart.Size = Vector3.new(15, 1, 38)
+	WaterMeshPart.CFrame = CFrame.new(0, MIN_WATER_LEVEL, -8)
 
 	WaterMeshPart.Parent = Workspace
 end
@@ -132,14 +133,14 @@ local function UpdateWaterMesh(dt: number)
 
 	WaterTime += dt
 
-	if WaterController.RiseSpeed > 0 then
+	if WaterController.IsRiseActive and WaterController.RiseSpeed > 0 then
 		WaterController.WaterLevel += WaterController.RiseSpeed * dt
 	end
 
 	WaterController.WaterLevel = math.clamp(WaterController.WaterLevel, MIN_WATER_LEVEL, MAX_WATER_LEVEL)
 
 	WaterMeshPart.CFrame =
-		WaterMeshPart.CFrame:Lerp(CFrame.new(0, WaterController.WaterLevel, 0), WATER_MOVE_SPEED * dt)
+		WaterMeshPart.CFrame:Lerp(CFrame.new(0, WaterController.WaterLevel, -8), WATER_MOVE_SPEED * dt)
 
 	for i = 1, #VertexIds do
 		local vertexId = VertexIds[i]
@@ -172,9 +173,21 @@ local function UpdateWaterMesh(dt: number)
 	end
 end
 
+function WaterController.StartRise()
+	if WaterController.IsRiseActive then return end
+	WaterController.IsRiseActive = true
+end
+
+function WaterController.StopRise()
+	if not WaterController.IsRiseActive then return end
+	WaterController.IsRiseActive = false
+end
+
 function WaterController.Reset()
 	WaterController.RiseSpeed = 0
 	WaterController.WaterLevel = MIN_WATER_LEVEL
+
+	WaterController.StopRise()
 end
 
 function WaterController.SetRiseSpeed(speed: number)

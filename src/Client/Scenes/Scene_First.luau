@@ -20,6 +20,8 @@ type Scene = {
 	CurrentPromise: Promise.Promise?,
 } & TScene.TScene
 
+local WAIT_BEFORE_ACTION = 2.5
+
 local Scene_First = {} :: Scene
 Scene_First.IsActive = false
 Scene_First.CurrentPromise = nil
@@ -42,7 +44,7 @@ local function tutorial()
 		:andThen(function()
 			DialogueController.Talk({ Id = ECharacters.Radio, Dialogue = EDialogue.First_Radio_Tutorial_2 })
 
-			return Promise.delay(1):andThen(function()
+			return Promise.delay(WAIT_BEFORE_ACTION):andThen(function()
 				return Promise.new(function(resolve, _, onCancel)
 					ValveController.RightSpeed = ValveController.RIGHT_SPEED_TUTORIAL
 					local valve = ValveController.EnableRandomValve("Low")
@@ -77,8 +79,9 @@ local function tutorial()
 			-- Then take the water out
 			DialogueController.Talk({ Id = ECharacters.Radio, Dialogue = EDialogue.First_Radio_Tutorial_5 })
 
-			return Promise.delay(1)
+			return Promise.delay(WAIT_BEFORE_ACTION)
 				:andThen(function()
+					LeaksController.EnableBlowtorch()
 					LeaksController.BreakRandom()
 					return Promise.fromEvent(LeaksController.OnLeakFixed :: any)
 				end)
@@ -95,7 +98,7 @@ local function tutorial()
 		:andThen(function()
 			DialogueController.Talk({ Id = ECharacters.Radio, Dialogue = EDialogue.First_Radio_Tutorial_8 })
 
-			return Promise.delay(1):andThen(function()
+			return Promise.delay(WAIT_BEFORE_ACTION):andThen(function()
 				return Promise.new(function(resolve, _, onCancel)
 					local light = LightController.BreakMainLight()
 
@@ -138,7 +141,46 @@ local function tutorial()
 			return DialogueController.Talk({ Id = ECharacters.Radio, Dialogue = EDialogue.First_Radio_Tutorial_9 })
 		end)
 		:andThen(function()
-			return DialogueController.Talk({ Id = ECharacters.Radio, Dialogue = EDialogue.First_Radio_Tutorial_10 })
+			DialogueController.Talk({ Id = ECharacters.Radio, Dialogue = EDialogue.First_Radio_Tutorial_10 })
+
+			return Promise.delay(WAIT_BEFORE_ACTION):andThen(function()
+				return Promise.new(function(resolve, _, onCancel)
+					local light = LightController.BreakEngineLight()
+
+					if not light then
+						LightController.Reset()
+						light = LightController.BreakEngineLight()
+					end
+
+					onCancel(function()
+						Highlights.RemoveLoop(LightController.LightbulbCage)
+						if light then Highlights.RemoveLoop(light) end
+					end)
+
+					if not LightController.HasLightbulb then
+						Highlights.AddLoop(LightController.LightbulbCage)
+
+						return Promise.fromEvent(LightController.OnBulbGrabbed :: any):andThen(function()
+							Highlights.RemoveLoop(LightController.LightbulbCage)
+							if light then Highlights.AddLoop(light) end
+
+							return Promise.fromEvent(LightController.OnAnyLightFixed :: any):andThen(function()
+								if light then Highlights.RemoveLoop(light) end
+								LightController.Reset()
+								resolve()
+							end)
+						end)
+					else
+						if light then Highlights.AddLoop(light) end
+
+						return Promise.fromEvent(LightController.OnAnyLightFixed :: any):andThen(function()
+							if light then Highlights.RemoveLoop(light) end
+							LightController.Reset()
+							resolve()
+						end)
+					end
+				end)
+			end)
 		end)
 		:andThen(function()
 			return DialogueController.Talk({ Id = ECharacters.Radio, Dialogue = EDialogue.First_Radio_Tutorial_11 })
@@ -197,19 +239,14 @@ local function tutorial()
 					if new < PressureController.ENGINE_STRESS_THRESHOLD or stressDebounce then return end
 
 					stressDebounce = true
-
 					DialogueController.Talk({ Id = ECharacters.Radio, Dialogue = EDialogue.First_Radio_Tutorial_15 })
+
+					Promise.delay(1)
 						:andThen(function()
-							EngineController.FreeLever()
-
-							DialogueController.Talk({
-								Id = ECharacters.Radio,
-								Dialogue = EDialogue.First_Radio_Tutorial_16,
-							})
-
-							Highlights.AddLoop(EngineController.EngineLever)
-
 							return Promise.new(function(resolveStep)
+								EngineController.FreeLever()
+								Highlights.AddLoop(EngineController.EngineLever)
+
 								if EngineController.LeverCurrentLevel == "Down" then
 									resolveStep()
 									return
@@ -218,9 +255,15 @@ local function tutorial()
 								local connection: Signal.Connection?
 								connection = EngineController.OnLevelChanged:Connect(function(_, level)
 									if level ~= "Down" then return end
+
 									EngineController.StuckLever()
 									EngineController.ChangeLeverLevel("Down")
 									Highlights.RemoveLoop(EngineController.EngineLever)
+
+									DialogueController.Talk({
+										Id = ECharacters.Radio,
+										Dialogue = EDialogue.First_Radio_Tutorial_16,
+									})
 
 									if connection then
 										connection:Disconnect()
@@ -235,11 +278,17 @@ local function tutorial()
 							return Promise.fromEvent(PressureController.OnPressureFull :: any)
 						end)
 						:andThen(function()
+							return DialogueController.Talk({
+								Id = ECharacters.Radio,
+								Dialogue = EDialogue.First_Radio_Tutorial_17,
+							})
+						end)
+						:andThen(function()
 							stop()
 
 							return DialogueController.Question({
 								Id = ECharacters.Radio,
-								Dialogue = EDialogue.First_Radio_Tutorial_17,
+								Dialogue = EDialogue.First_Radio_Tutorial_18,
 							})
 						end)
 						:andThen(function(agreed)
@@ -257,6 +306,8 @@ end
 function Scene_First.Start()
 	Scene_First.IsActive = true
 
+	WaterController.StopRise()
+
 	Scene_First.CurrentPromise = Promise.delay(1)
 		:andThen(function()
 			return DialogueController.Question({ Id = ECharacters.Radio, Dialogue = EDialogue.First_Radio_0 })
@@ -265,7 +316,7 @@ function Scene_First.Start()
 			if agreed then return tutorial() end
 		end)
 		:andThen(function()
-			DialogueController.Talk({ Id = ECharacters.Radio, Dialogue = EDialogue.First_Radio_1 })
+			DialogueController.Talk({ Id = ECharacters.Radio, Dialogue = EDialogue.First_Radio_1 }):await()
 
 			return EScenes.Second
 		end)

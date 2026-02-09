@@ -18,6 +18,7 @@ local DEPTH_SPEED = 0.0001
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui") :: PlayerGui
 local DepthSurfaceGui = PlayerGui:WaitForChild("Depth") :: SurfaceGui
+local DepthNameSurfaceGui = PlayerGui:WaitForChild("DepthName") :: SurfaceGui
 local Pivot = DepthSurfaceGui:WaitForChild("Background"):WaitForChild("Pivot") :: Frame
 
 local DepthController = {}
@@ -76,6 +77,8 @@ function DepthController.Reset(scene: number)
 		DepthController.CurrentDepth = SECOND_DEPTH
 	elseif scene == EScenes.Fourth then
 		DepthController.CurrentDepth = THIRD_DEPTH
+	elseif scene == EScenes.Fifth then
+		DepthController.CurrentDepth = FOURTH_DEPTH
 	end
 
 	changePivotPos(DepthController.CurrentDepth)
@@ -83,10 +86,12 @@ end
 
 LightController.OnMainLightBroke:Connect(function()
 	DepthSurfaceGui.Enabled = false
+	DepthNameSurfaceGui.Enabled = false
 end)
 
 LightController.OnMainLightFixed:Connect(function()
 	DepthSurfaceGui.Enabled = true
+	DepthNameSurfaceGui.Enabled = true
 end)
 
 return Ignis.Register(DepthController)

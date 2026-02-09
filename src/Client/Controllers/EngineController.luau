@@ -18,11 +18,16 @@ local LEVEL_MIDDLE_STRESS = 5
 local LEVEL_DOWN_STRESS = -25
 
 -- for engine speeds
-local LEVEL_UP_SPEED = 25
-local LEVEL_MIDDLE_SPEED = 10
-local LEVEL_DOWN_SPEED = 5
+local LEVEL_UP_SPEED = 30
+local LEVEL_MIDDLE_SPEED = 25
+local LEVEL_DOWN_SPEED = 15
 
 local SPEED_CHANGE_SPEED = 15 -- how fast the engine rpm adjusts
+
+local ENGINE_SOUND_NO_LIGHT = 0.3
+local ENGINE_SOUND_DOWN = 0.3
+local ENGINE_SOUND_MIDDLE = 0.4
+local ENGINE_SOUND_UP = 0.5
 
 local MAX_STRESS = 500
 
@@ -45,8 +50,23 @@ EngineController.IsEngineRunning = false
 EngineController.LEVEL_UP_STRESS = LEVEL_UP_STRESS
 EngineController.LEVEL_MIDDLE_STRESS = LEVEL_MIDDLE_STRESS
 EngineController.LEVEL_DOWN_STRESS = LEVEL_DOWN_STRESS
+
+EngineController.LEVEL_UP_SPEED = LEVEL_UP_SPEED
+EngineController.LEVEL_MIDDLE_SPEED = LEVEL_MIDDLE_SPEED
+EngineController.LEVEL_DOWN_SPEED = LEVEL_DOWN_SPEED
+
+EngineController.LEVEL_UP_SPEED_FOURTH = LEVEL_UP_SPEED * 2
+EngineController.LEVEL_MIDDLE_SPEED_FOURTH = LEVEL_MIDDLE_SPEED * 2
+EngineController.LEVEL_DOWN_SPEED_FOURTH = LEVEL_DOWN_SPEED * 2
+
 EngineController.LevelUpStress = LEVEL_UP_STRESS
 EngineController.LevelMiddleStress = LEVEL_MIDDLE_STRESS
+EngineController.LevelDownStress = LEVEL_DOWN_STRESS
+
+EngineController.LevelUpSpeed = LEVEL_UP_SPEED
+EngineController.LevelMiddleSpeed = LEVEL_MIDDLE_SPEED
+EngineController.LevelDownSpeed = LEVEL_DOWN_SPEED
+
 EngineController.EngineLever = EngineLever
 EngineController.IsLeverStuck = false
 
@@ -60,6 +80,17 @@ local function levelChanged(lever: BasePart, oldLevel: LeverLevels, newLevel: Le
 
 	-- Maybe add some pitch change
 	SoundsController.Play(ESounds.Lever, lever)
+
+	local targetVol
+	if newLevel == "Down" then
+		targetVol = ENGINE_SOUND_DOWN
+	elseif newLevel == "Middle" then
+		targetVol = ENGINE_SOUND_MIDDLE
+	elseif newLevel == "Up" then
+		targetVol = ENGINE_SOUND_UP
+	end
+
+	if targetVol then SoundsController.FadeLoop(ESounds.EngineLoop, EngineLight, targetVol) end
 end
 
 local function getStressColor(stress: number)
@@ -170,6 +201,7 @@ function EngineController.StartEngine()
 	end
 
 	EngineController.IsEngineRunning = true
+	SoundsController.PlayLoop(ESounds.EngineLoop, EngineLight, true)
 
 	Connection = RunService.Heartbeat:Connect(function(dt)
 		local oldStress = EngineController.CurrentStress
@@ -177,7 +209,7 @@ function EngineController.StartEngine()
 
 		local stressRate = 0
 		if not EngineController.IsEngineRunning then
-			stressRate = LEVEL_DOWN_STRESS
+			stressRate = EngineController.LevelDownStress
 		elseif EngineController.LeverCurrentLevel == "Up" then
 			stressRate = EngineController.LevelUpStress
 		elseif EngineController.LeverCurrentLevel == "Middle" then
@@ -191,11 +223,11 @@ function EngineController.StartEngine()
 		local targetSpeed = 0
 		if EngineController.IsEngineRunning then
 			if EngineController.LeverCurrentLevel == "Up" then
-				targetSpeed = LEVEL_UP_SPEED
+				targetSpeed = EngineController.LevelUpSpeed
 			elseif EngineController.LeverCurrentLevel == "Middle" then
-				targetSpeed = LEVEL_MIDDLE_SPEED
+				targetSpeed = EngineController.LevelMiddleSpeed
 			else
-				targetSpeed = LEVEL_DOWN_SPEED
+				targetSpeed = EngineController.LevelDownSpeed
 			end
 		end
 
@@ -222,6 +254,7 @@ end
 
 function EngineController.StopEngine()
 	EngineController.IsEngineRunning = false
+	SoundsController.PlayLoop(ESounds.EngineLoop, EngineLight, false)
 end
 
 function EngineController.Reset()
@@ -240,8 +273,15 @@ function EngineController.Reset()
 	EngineLight.PointLight.Color = LOW_STRESS_COLOR
 
 	EngineController.LeverCurrentLevel = "Down"
+
 	EngineController.LevelUpStress = LEVEL_UP_STRESS
 	EngineController.LevelMiddleStress = LEVEL_MIDDLE_STRESS
+	EngineController.LevelDownStress = LEVEL_DOWN_STRESS
+
+	EngineController.LevelUpSpeed = LEVEL_UP_SPEED
+	EngineController.LevelMiddleSpeed = LEVEL_MIDDLE_SPEED
+	EngineController.LevelDownSpeed = LEVEL_DOWN_SPEED
+
 	currentAlpha = 0
 
 	EngineLever.CFrame = LEVER_DOWN_CF

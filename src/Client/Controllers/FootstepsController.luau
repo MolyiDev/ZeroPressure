@@ -46,7 +46,7 @@ function FootstepsController.OnCharacterAdded(_, characterEntity: jecs.Entity)
 			lastFootstep = tick()
 
 			local materialName = humanoid.FloorMaterial.Name
-			if materialName == "Air" then return end
+			if materialName ~= "Metal" then return end
 
 			local Sounds = FootstepsSounds[materialName]:GetChildren()
 			local selectedSound = Sounds[math.random(1, #Sounds)]:Clone() :: Sound

@@ -1,43 +1,46 @@
 return table.freeze({
 	--==[ First Scene ]==--
 
-	First_Radio_0 = [[Good, we are ready to go now. You will be the first human to reach this depth in the ocean. Do you want me to explain to you what to do one last time?]],
+	First_Radio_0 = [[We're ready to go. You'll be the first human to reach such depths. Do you want me to explain the procedure one last time?]],
 
-	First_Radio_Tutorial_0 = [[This submarine is prepared to get to immense depths in the ocean, but you need to do some things to make it happen.]],
-	First_Radio_Tutorial_1 = [[First of all, the pressure exerted by the ocean on the submarine will make the valves start to open. You will need to close them again, but they eventually get opened again.]],
-	First_Radio_Tutorial_2 = [[Let me show you, I opened a valve artificially. Go to the valve and close it! The valve opens to the right so you should close it to the left.]],
+	First_Radio_Tutorial_0 = [[This submarine is prepared for immense depths, but you need to manage it carefully.]],
+	First_Radio_Tutorial_1 = [[First, the ocean pressure will cause the <font color="rgb(255, 165, 0)">valves</font> to open slowly. You need to close them immediately.]],
+	First_Radio_Tutorial_2 = [[Let me show you. I opened a <font color="rgb(255, 165, 0)">valve</font>. Go close it! It opens to the right, so turn it to the left.]],
 
 	-- After the valve gets closed...
-	First_Radio_Tutorial_3 = [[Great! These valves release the pressure of the submarine so do not let them release all the pressure!]],
-	First_Radio_Tutorial_4 = [[Second, this should not happen, but if it does I have to tell you. If the submarine has water leaks you can use your blowtorch to fix them.]],
-	First_Radio_Tutorial_5 = [[Let me show you, I broke a little aperture of the submarine. Fix it with your blowtorch.]],
+	First_Radio_Tutorial_3 = [[<font color="rgb(50, 255, 50)">Great!</font> Those valves maintain internal pressure, so don't let them vent too much!]],
+	First_Radio_Tutorial_4 = [[Second. Sometimes wildlife or rocks will breach the hull and create <font color="rgb(100, 100, 255)">water leaks</font>. Use your <font color="rgb(255, 165, 0)">blowtorch</font> to seal them.]],
+	First_Radio_Tutorial_5 = [[I've triggered a small breach. Fix it with the <font color="rgb(255, 165, 0)">blowtorch</font>.]],
 
 	-- After the water leak was fixed...
-	First_Radio_Tutorial_6 = [[Good! Keep in mind that if the submarine gets water inside, the pressure amount that the submarine can have inside will be limited by the amount of water the submarine has inside!]],
-	First_Radio_Tutorial_7 = [[Third, sometimes the light can break, so you need to replace the light bulb with a new one.]],
-	First_Radio_Tutorial_8 = [[Let me show you, I breaked the main light bulb artificially. Grab a bulb from the bulbs cage and replace it.]],
+	First_Radio_Tutorial_6 = [[<font color="rgb(50, 255, 50)">Good.</font> Remember: if the submarine takes on water, your max pressure tolerance <font color="rgb(255, 50, 50)">drops significantly</font>!]],
+	First_Radio_Tutorial_7 = [[Third. The <font color="rgb(255, 165, 0)">Main Light</font> can burn out. You'll need to swap it with a fresh one from the <font color="rgb(255, 165, 0)">bulbs box</font>.]],
+	First_Radio_Tutorial_8 = [[I broke the Main Light remotely. Grab a spare from the <font color="rgb(255, 165, 0)">box</font> and replace it.]],
 
-	-- After the light bulb was fixed...
-	First_Radio_Tutorial_9 = [[Great! If the main bulb breaks, the lack of light will make you blind so you cannot see the pressure or depth. Also, you cannot repair the water leaks and close the valves at the same speed you would do with light!]],
-	First_Radio_Tutorial_10 = [[The Engine Light can also break, you can repair it the same way you did with the main light!]],
-	First_Radio_Tutorial_11 = [[Also, we have some reports that people go crazy without lights... So please do not be in the darkness too much time.]],
-	First_Radio_Tutorial_12 = [[Fourth and most important. You have to regulate your speed. If you go too fast and stress the engine it will start to make the pressure go down. You have to check the engine light to see at what temperature it is.]],
-	First_Radio_Tutorial_13 = [[Use the lever there to increase the engine velocity and go to highest temperature. Because we are close to the surface it will heat up faster.]],
+	-- After the main light bulb was fixed...
+	First_Radio_Tutorial_9 = [[<font color="rgb(50, 255, 50)">Nice.</font> Without that light, you're blind and you won't be able to read your pressure or depth gauges!]],
+	First_Radio_Tutorial_10 = [[The <font color="rgb(255, 165, 0)">Engine Light</font> can also break. I've broken it remotely, go ahead and replace it, just like before.]],
+
+	-- After the engine light bulb was fixed...
+	First_Radio_Tutorial_11 = [[<font color="rgb(50, 255, 50)">Excellent.</font> If that light dies, you can't monitor the engine temperature.]],
+	First_Radio_Tutorial_12 = [[Fourth, speaking of temperature: <font color="rgb(255, 50, 50)">Regulate your speed.</font> If you go too fast and stress the engine, the cabin pressure will drop. Check the <font color="rgb(255, 165, 0)">Engine Light</font> to monitor heat.]],
+	First_Radio_Tutorial_13 = [[Use the <font color="rgb(255, 165, 0)">lever</font> to increase velocity and hit max temperature. Since we're shallow, it will heat up fast.]],
 
 	-- When the player put the lever up
-	First_Radio_Tutorial_14 = [[Now wait until the engine gets a high temperature, don't worry, nothing will happen in this depth level if you have zero pressure.]],
+	First_Radio_Tutorial_14 = [[Now wait for the engine to overheat. Don't worry, at this depth, zero pressure won't kill you.]],
 
 	-- After the engine gets red temperature
-	First_Radio_Tutorial_15 = [[As you can see the pressure it's going down when the engine it's at a high temperature, so you need to regulate the temperature with the speed of the engine. The only way of making the engine cool off it's by putting the lever all the way down.]],
-	First_Radio_Tutorial_16 = [[Now lower the velocity and wait for the engine to cool down and the pressure to go up.]],
+	First_Radio_Tutorial_15 = [[See? The pressure is dropping because the engine is <font color="rgb(255, 50, 50)">overheating</font>. To cool it off, pull the lever all the way down.]],
+	First_Radio_Tutorial_16 = [[Now wait for the engine to cool and the pressure to stabilize.]],
 
 	-- After the pressure goes up
-	First_Radio_Tutorial_17 = [[Good. Do you want me to explain everything again?]],
+	First_Radio_Tutorial_17 = [[<font color="rgb(50, 255, 50)">Perfect.</font> You might think the safest way to descend is keeping the lever all the way down. But keep in mind: <font color="rgb(255, 50, 50)">max pressure declines over time</font>. You need to complete this mission as fast as possible.]],
+	First_Radio_Tutorial_18 = [[ Do you want me to explain the procedure again?]],
 	-- if the player picks yes then the tutorial starts again
 	-- if no then the game starts
 
 	-- After the player has or the player didn't want to see the tutorial.
-	First_Radio_1 = [[Just remember, do not let the pressure go to zero! Starting in 3... 2... 1...]],
+	First_Radio_1 = [[Just remember: <font color="rgb(255, 50, 50)">do NOT let the pressure hit zero!</font> Starting in <speed val="0.1">3... 2... 1...</speed>]],
 
 	--==[ Second Scene ]==--
 	Second_Radio_0 = [[Going down!]],
@@ -45,18 +48,18 @@ return table.freeze({
 	-- This scene finishes when the depth gets to 250
 
 	--==[ Third Scene ]==--
-	Third_Radio_0 = [[You are at the middle of the journey! Because of the depth, the pressure of the ocean on the submarine will be higher so more valves will open up!]],
-	Third_Radio_1 = [[Also I'm detecting some wild life down there, it's normal! You can expect some rocks or creatures to bump in the submarine, maybe it cracks, but you can repair it!]],
+	Third_Radio_0 = [[You're halfway there! The external pressure is rising, so expect more <font color="rgb(255, 165, 0)">valves</font> to blow!]],
+	Third_Radio_1 = [[I'm detecting large wildlife signatures. Something might bump the submarine. If the hull cracks, <font color="rgb(255, 165, 0)">repair it fast!</font>]],
 	-- This scene starts at depth 250 and finishes when the depth gets to 500
 
 	--==[ Fourth Scene ]==--
 	-- This scene starts at depth 500
 
 	-- The submarine stops at depth 500
-	Fourth_Radio_0 = [[Good! You did it! You reached depths no human has ever reached before!]],
-	Fourth_Radio_1 = [[Now we will get you up!]],
-	Fourth_Radio_2 = [[Seems that there is an error, @#Y*@(]],
-	Fourth_Radio_3 = [[4R3 Y0U TH3R3?! TH# S!GN4L S33MS T0 B3 CUTT1NG D0WN *&Y#&*@ *(@#&^( @#&*^@*#]],
+	Fourth_Radio_0 = [[<font color="rgb(50, 255, 50)">You did it!</font> You've reached a depth no human has ever seen!]],
+	Fourth_Radio_1 = [[Initiating ascent procedure...]],
+	Fourth_Radio_2 = [[<font color="rgb(255, 50, 50)">Wait, there's an error.</font> <speed val="-0.05">@#**(#!)*&@*&*@</speed>]],
+	Fourth_Radio_3 = [[<font color="rgb(255, 0, 0)">4R3 Y0U TH3R3?! TH# S!GN4L S33MS T0 B3 CUTT1NG D0WN *&Y#&*@ *(@#&^( @#&*^@*#</font>]],
 
 	-- After the dialogue 3 the submarine gets cut out of the line that was grabbed by some mysterious thing and the communications get cut down.
 	-- Then the submarine goes down at immense speeds

@@ -3,10 +3,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local SoundsController = require(script.Parent.SoundsController)
 local Ignis = require(ReplicatedStorage.Packages.Ignis)
 local Signal = require(ReplicatedStorage.Packages.Signal)
+local ESounds = require(ReplicatedStorage.Types.Enums.ESounds)
 
-export type Valve = { Effects: Attachment } & BasePart
+export type Valve = { Effects: Attachment, SteamLoop: Sound } & BasePart
 export type PressureLevel = "None" | "Low" | "Medium" | "High" | "Final"
 export type ValveState = {
 	Enabled: boolean,
@@ -22,16 +24,20 @@ local FULL_ROTATION_RIGHT = math.rad(179)
 local FULL_ROTATION_LEFT = math.rad(-179)
 local RIGHT_SPEED_DEFAULT = (FULL_ROTATION_RIGHT - FULL_ROTATION_LEFT) / 15
 local RIGHT_SPEED_TUTORIAL = (FULL_ROTATION_RIGHT - FULL_ROTATION_LEFT) / 2
-local LEFT_SPEED_ROTATION = 1.6
+local LEFT_SPEED_ROTATION = 1.8
 
 local AUTO_RESTORE_SMOOTHNESS = 2
 local TOUCH_FRICTION = 5
-local INPUT_SENSITIVITY = 5
+local INPUT_SENSITIVITY = 15
 
-local THRESHOLD_LOW = 7
-local THRESHOLD_MEDIUM = 14
-local THRESHOLD_HIGH = 21
+local THRESHOLD_LOW = 8
+local THRESHOLD_MEDIUM = 15
+local THRESHOLD_HIGH = 22
 local THRESHOLD_FINAL = 26
+
+local STEAMLOOP_LOW_VOLUME = 0.1
+local STEAMLOOP_MEDIUM_VOLUME = 0.2
+local STEAMLOOP_HIGH_VOLUME = 0.3
 
 local Valves = CollectionService:GetTagged("Valve") :: { Valve }
 local CurrentValve: Valve?
@@ -148,6 +154,25 @@ local function pressureChanged(valve: Valve, oldLevel: PressureLevel, newLevel: 
 		effect.Parent = valve.Effects
 		state.CurrentEffect = effect
 	end
+
+	-- SFX
+	if oldLevel == "None" then SoundsController.PlayLoop(ESounds.SteamLoop, valve, false) end
+
+	if newLevel == "None" then
+		SoundsController.Play(ESounds.SteamFree, valve)
+		SoundsController.StopLoop(ESounds.SteamLoop, valve, true)
+	else
+		local targetVol
+		if newLevel == "Low" then
+			targetVol = STEAMLOOP_LOW_VOLUME
+		elseif newLevel == "Medium" then
+			targetVol = STEAMLOOP_MEDIUM_VOLUME
+		elseif newLevel == "High" then
+			targetVol = STEAMLOOP_HIGH_VOLUME
+		end
+
+		if targetVol then SoundsController.FadeLoop(ESounds.SteamLoop, valve, targetVol) end
+	end
 end
 
 function ValveController.ValveTouched(valve: Valve)
@@ -218,6 +243,12 @@ end
 function ValveController.EnableAllValves(initialPressureLevel: PressureLevel?)
 	for _, valve in Valves do
 		ValveController.EnableValve(valve, initialPressureLevel)
+	end
+end
+
+function ValveController.DisableAllValves()
+	for _, valve in Valves do
+		ValveController.DisableValve(valve)
 	end
 end
 

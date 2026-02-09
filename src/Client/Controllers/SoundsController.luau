@@ -1,44 +1,96 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
+local TweenService = game:GetService("TweenService")
 local Ignis = require(ReplicatedStorage.Packages.Ignis)
 local ESounds = require(ReplicatedStorage.Types.Enums.ESounds)
 
-type SoundData = { Sound: Sound, BaseSpeed: number }
+local TW_FADE = TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 
 local SoundsFolder = ReplicatedStorage:WaitForChild("Sounds")
 
 local SoundsController = {}
-local Sounds: { [number]: SoundData } = {}
+local Sounds: { [number]: Sound } = {}
 local ActiveSounds: { [Sound]: boolean } = {}
 
 for _, sound in SoundsFolder:GetDescendants() do
 	if not sound:IsA("Sound") then continue end
 	local id = ESounds[sound.Name]
 	if not id then continue end
-	Sounds[id] = { Sound = sound, BaseSpeed = sound.PlaybackSpeed }
+	Sounds[id] = sound
 end
 
 function SoundsController.Clone(soundId: number, parent: any): Sound?
-	local data = Sounds[soundId]
-	if not data then return nil end
+	local sound = Sounds[soundId]
+	if not sound then return nil end
 
-	local clone = data.Sound:Clone()
+	local clone = sound:Clone()
 	clone.Parent = parent
 
 	return clone
 end
 
-function SoundsController.Play(soundId: number, parent: any)
-	local data = Sounds[soundId]
-	if not data then return end
+function SoundsController.PlayLoop(soundId: number, parent: Instance, fade: boolean)
+	local sound = Sounds[soundId]
+	if not sound then return end
 
-	local clone = data.Sound:Clone()
+	if parent:FindFirstChild(sound.Name) then return end
+
+	local clone = sound:Clone()
+	clone.Parent = parent
+	clone.Looped = true
+	clone.Volume = 0
+	ActiveSounds[clone] = true
+	clone:Play()
+
+	if fade then TweenService:Create(clone, TW_FADE, {
+		Volume = sound.Volume,
+	}):Play() end
+end
+
+function SoundsController.FadeLoop(soundId: number, parent: Instance, volume: number)
+	local sound = Sounds[soundId]
+	if not sound then return end
+
+	local activeSound = parent:FindFirstChild(sound.Name) :: Sound
+	if activeSound then TweenService:Create(activeSound, TW_FADE, { Volume = volume }):Play() end
+end
+
+function SoundsController.StopLoop(soundId: number, parent: any, fade: boolean)
+	local sound = Sounds[soundId]
+	if not sound then return end
+
+	local oldSound = parent:FindFirstChild(sound.Name) :: Sound
+	if not oldSound then return end
+
+	if fade then
+		oldSound.Name = "Fading_" .. oldSound.Name
+
+		local tween = TweenService:Create(oldSound, TW_FADE, {
+			Volume = 0,
+		})
+
+		tween.Completed:Once(function()
+			ActiveSounds[oldSound] = nil
+			if oldSound then oldSound:Destroy() end
+		end)
+
+		tween:Play()
+	else
+		ActiveSounds[oldSound] = nil
+		oldSound:Destroy()
+	end
+end
+
+function SoundsController.Play(soundId: number, parent: any)
+	local sound = Sounds[soundId]
+	if not sound then return end
+
+	local clone = sound:Clone()
 	clone.Parent = parent
 	clone.Ended:Once(function()
 		ActiveSounds[clone] = nil
-		clone:Destroy()
+		if clone then clone:Destroy() end
 	end)
-	clone.PlaybackSpeed = data.BaseSpeed
 	ActiveSounds[clone] = true
 	clone:Play()
 end
@@ -46,7 +98,7 @@ end
 function SoundsController.PlaySound(sound: Sound)
 	sound.Ended:Once(function()
 		ActiveSounds[sound] = nil
-		sound:Destroy()
+		if sound then sound:Destroy() end
 	end)
 	ActiveSounds[sound] = true
 	sound:Play()

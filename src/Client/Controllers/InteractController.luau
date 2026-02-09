@@ -27,6 +27,7 @@ for _, interactable in InteractablesList do
 end
 
 local InteractController = {}
+InteractController.TutorialActive = false
 
 local function getObject(hit: BasePart): BasePart?
 	if not hit:IsA("BasePart") then return end

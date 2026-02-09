@@ -34,7 +34,7 @@ return function(): DialogueUIReturn
 		AutoLocalize = false,
 		BackgroundTransparency = 1,
 		FontFace = Font.new("rbxasset://fonts/families/Fondamento.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal),
-		Position = UDim2.fromScale(0.5, 0.525),
+		Position = UDim2.fromScale(0.5, 0.385),
 		RichText = true,
 		Size = UDim2.fromScale(0.95, 0.53),
 		Text = "",

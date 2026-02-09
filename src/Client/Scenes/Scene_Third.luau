@@ -26,21 +26,26 @@ Scene_Third.CurrentPromise = nil
 function Scene_Third.Start()
 	Scene_Third.IsActive = true
 
+	WaterController.StartRise()
 	EngineController.StartEngine()
 	DepthController.Start()
 	PressureController.Start()
 
 	Scene_Third.CurrentPromise = Promise.delay(0.5)
 		:andThen(function()
-			return Promise.new(function(resolve, _, onCancel)
-				local promise = DialogueController.Talk({ Id = ECharacters.Radio, Dialogue = EDialogue.Third_Radio_1 })
-					:andThen(function()
-						return DialogueController.Talk({ Id = ECharacters.Radio, Dialogue = EDialogue.Third_Radio_0 })
-					end)
+			DialogueController.Talk({ Id = ECharacters.Radio, Dialogue = EDialogue.Third_Radio_0 }):andThen(function()
+				return DialogueController.Talk({ Id = ECharacters.Radio, Dialogue = EDialogue.Third_Radio_1 })
+			end)
 
+			return Promise.delay(1)
+		end)
+		:andThen(function()
+			return Promise.new(function(resolve, _, onCancel)
 				LeaksController.EnableBlowtorch()
 				LeaksController.StartRandomizer()
 				LightController.Start()
+
+				LightController.ChanceToBreak = LightController.CHANCE_TO_BREAK_THIRD
 
 				if ValveController.EnabledValvesCount == 0 then
 					ValveController.EnableRandomValve()
@@ -52,15 +57,16 @@ function Scene_Third.Start()
 				ValveController.EnableRandomValve()
 
 				local debounce = false
-				local activatedOtherValve = false
+				local halfDebounce = false
 				local connection: Signal.Connection?
 
 				connection = DepthController.OnDepthChanged:Connect(function(_, new)
-					if new < DepthController.THIRD_DEPTH / 1.65 then return end
+					if new < DepthController.THIRD_DEPTH / 2 then return end
 
-					if not activatedOtherValve then
-						activatedOtherValve = true
+					if not halfDebounce then
+						halfDebounce = true
 						ValveController.EnableRandomValve()
+						LightController.ChanceToBreak = LightController.CHANCE_TO_BREAK_THIRD_HALF
 					end
 
 					if new < DepthController.THIRD_DEPTH or debounce then return end
@@ -71,8 +77,6 @@ function Scene_Third.Start()
 						connection = nil
 					end
 
-					promise:cancel()
-
 					resolve()
 				end)
 
@@ -81,8 +85,6 @@ function Scene_Third.Start()
 						connection:Disconnect()
 						connection = nil
 					end
-
-					promise:cancel()
 				end)
 			end)
 		end)

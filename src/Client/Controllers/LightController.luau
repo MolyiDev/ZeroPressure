@@ -5,9 +5,13 @@ local TweenService = game:GetService("TweenService")
 local SoundsController = require(script.Parent.SoundsController)
 local Ignis = require(ReplicatedStorage.Packages.Ignis)
 local Signal = require(ReplicatedStorage.Packages.Signal)
+local jecs = require(ReplicatedStorage.Packages.jecs)
+local Components = require(ReplicatedStorage.Shared.ECS.Components)
+local World = require(ReplicatedStorage.Shared.ECS.Worlds.World)
 local countMap = require(ReplicatedStorage.Shared.Utils.Functions.countMap)
 local Highlights = require(ReplicatedStorage.Shared.Utils.Highlights)
 local ESounds = require(ReplicatedStorage.Types.Enums.ESounds)
+local TCharacter = require(ReplicatedStorage.Types.TCharacter)
 
 type Light = {
 	PointLight: PointLight,
@@ -34,6 +38,11 @@ local Lights = { MainLight, EngineLight }
 local LightsBroken: { [Light]: boolean } = {}
 local Connection: RBXScriptConnection?
 
+local LightIdleAnim = ReplicatedStorage:WaitForChild("Animations"):WaitForChild("LightIdle")
+
+local LightIdle: AnimationTrack
+local LightBulb: BasePart
+
 local LightController = {}
 LightController.OnAnyLightFixed = Signal.new()
 LightController.OnMainLightFixed = Signal.new()
@@ -44,11 +53,10 @@ LightController.OnBulbGrabbed = Signal.new()
 LightController.IsActive = false
 LightController.HasLightbulb = false
 LightController.CHANCE_TO_BREAK_DEFAULT = CHANCE_TO_BREAK_DEFAULT
-LightController.CHANCE_TO_BREAK_SECOND_HALF = CHANCE_TO_BREAK_DEFAULT * 2
-LightController.CHANCE_TO_BREAK_THIRD = CHANCE_TO_BREAK_DEFAULT * 3
-LightController.CHANCE_TO_BREAK_THIRD_HALF = CHANCE_TO_BREAK_DEFAULT * 4
-LightController.CHANCE_TO_BREAK_FOURTH = CHANCE_TO_BREAK_DEFAULT * 5
-LightController.CHANCE_TO_BREAK_FOURTH_HALF = CHANCE_TO_BREAK_DEFAULT * 6
+LightController.CHANCE_TO_BREAK_THIRD = CHANCE_TO_BREAK_DEFAULT * 2
+LightController.CHANCE_TO_BREAK_THIRD_HALF = CHANCE_TO_BREAK_DEFAULT * 3
+LightController.CHANCE_TO_BREAK_FOURTH = CHANCE_TO_BREAK_DEFAULT * 4
+LightController.CHANCE_TO_BREAK_FOURTH_HALF = CHANCE_TO_BREAK_DEFAULT * 5
 LightController.ChanceToBreak = CHANCE_TO_BREAK_DEFAULT
 LightController.LightbulbCage = CollectionService:GetTagged("Lightbulbs")[1]
 
@@ -130,11 +138,17 @@ function LightController.GrabBulb()
 	LightController.HasLightbulb = true
 	SoundsController.PlayCharacter(ESounds.Equip)
 	LightController.OnBulbGrabbed:Fire()
+
+	if LightIdle then LightIdle:Play(0.2, 1, 0.3) end
+	if LightBulb then LightBulb.Transparency = 0 end
 end
 
 function LightController.RemoveBulb()
 	if not LightController.HasLightbulb then return end
 	LightController.HasLightbulb = false
+
+	if LightIdle then LightIdle:Stop(0.2) end
+	if LightBulb then LightBulb.Transparency = 1 end
 end
 
 function LightController.Fix(light: Light)
@@ -188,6 +202,20 @@ function LightController.Reset()
 	LightController.ChanceToBreak = CHANCE_TO_BREAK_DEFAULT
 	LightController.RemoveBulb()
 	LightController.Stop()
+end
+
+LightController.OnCharacterAdded = function(character: TCharacter.TCharacter, characterEntity: jecs.Entity)
+	local animator = World:get(characterEntity, Components.Animator)
+
+	if not animator then
+		warn("Humanoid / HumanoidRootPart / Butler are nil")
+		return
+	end
+
+	LightIdle = animator:LoadAnimation(LightIdleAnim)
+	LightBulb = character:WaitForChild("Bulb") :: BasePart
+
+	if LightBulb then LightBulb.Transparency = 1 end
 end
 
 return Ignis.Register(LightController)

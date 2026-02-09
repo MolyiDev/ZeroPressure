@@ -6,23 +6,31 @@ local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local SoundsController = require(script.Parent.SoundsController)
 local Ignis = require(ReplicatedStorage.Packages.Ignis)
 local Signal = require(ReplicatedStorage.Packages.Signal)
+local jecs = require(ReplicatedStorage.Packages.jecs)
+local Components = require(ReplicatedStorage.Shared.ECS.Components)
+local World = require(ReplicatedStorage.Shared.ECS.Worlds.World)
+local ESounds = require(ReplicatedStorage.Types.Enums.ESounds)
+local TCharacter = require(ReplicatedStorage.Types.TCharacter)
 
 type WaterLeak = { ParticleEmitter } & Attachment
 
 local TW_FIX = TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-local CHANCE_TO_BREAK_DEFAULT = 0.1
+local CHANCE_TO_BREAK_DEFAULT = 0.01
 local CHANCE_BREAK_AMOUNT = 2
-local FIX_TIME = 0.75
+local FIX_TIME = 0.6
 local MAX_FIX_DISTANCE = 10
 local LEAK_HIT_RADIUS = 2
 
 local Player = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
+local EffectsFolder = ReplicatedStorage:WaitForChild("Effects")
+local Colliders = Workspace:WaitForChild("Submarine"):WaitForChild("Colliders") :: Model
 local PossibleWaterLeaks = CollectionService:GetTagged("WaterLeak") :: { Attachment }
-local WaterLeaksEffects = ReplicatedStorage:WaitForChild("Effects"):WaitForChild("WaterLeaks") :: Folder
+local WaterLeaksEffects = EffectsFolder:WaitForChild("WaterLeaks") :: Folder
 local WaterLeakLevel1 = WaterLeaksEffects:WaitForChild("Level1") :: WaterLeak
 local WaterLeakLevel2 = WaterLeaksEffects:WaitForChild("Level2") :: WaterLeak
 local WaterLeakLevel3 = WaterLeaksEffects:WaitForChild("Level3") :: WaterLeak
@@ -43,32 +51,47 @@ local CurrentLeaks: { [WaterLeak]: boolean } = {}
 local LeakProgress: { [WaterLeak]: number } = {}
 local FixConnection: RBXScriptConnection?
 
-local BlowtorchStart = SoundService:WaitForChild("BlowtorchStart") :: Sound
-local BlowtorchLoop = SoundService:WaitForChild("BlowtorchLoop") :: Sound
+local BlowtorchAnimations = ReplicatedStorage:WaitForChild("Animations"):WaitForChild("Blowtorch")
+local BlowtorchIdleAnim = BlowtorchAnimations:WaitForChild("Idle")
+local BlowtorchUseAnim = BlowtorchAnimations:WaitForChild("Use")
+
+local BlowtorchIdle: AnimationTrack
+local BlowtorchUse: AnimationTrack
+
+local BlowtorchEffects: Attachment
 
 local LeaksController = {}
 LeaksController.OnLeakFixed = Signal.new() :: Signal.Signal<number>
 LeaksController.OnLeakDegraded = Signal.new() :: Signal.Signal<number, number>
 LeaksController.OnLeakCreated = Signal.new() :: Signal.Signal<number>
 LeaksController.CanUseBlowtorch = false
-LeaksController.IsRandomizedActive = false
+LeaksController.IsRandomizerActive = false
 LeaksController.ChanceToBreak = CHANCE_TO_BREAK_DEFAULT
 LeaksController.ChanceBreakAmount = CHANCE_BREAK_AMOUNT
 
 local RandomizerConnection: RBXScriptConnection?
 
 local function stopBlowtorch()
-	BlowtorchLoop:Stop()
+	SoundsController.StopLoop(ESounds.BlowtorchLoop, SoundService, true)
+
 	table.clear(LeakProgress)
 	if FixConnection then
 		FixConnection:Disconnect()
 		FixConnection = nil
 	end
+
+	if BlowtorchUse and BlowtorchUse.IsPlaying then BlowtorchUse:Stop(0.2) end
+
+	if BlowtorchEffects then
+		for _, emitter in BlowtorchEffects:GetDescendants() do
+			if emitter:IsA("ParticleEmitter") then emitter.Enabled = false end
+		end
+	end
 end
 
 function LeaksController.StartRandomizer()
-	if LeaksController.IsRandomizedActive then return end
-	LeaksController.IsRandomizedActive = true
+	if LeaksController.IsRandomizerActive then return end
+	LeaksController.IsRandomizerActive = true
 
 	if RandomizerConnection then
 		RandomizerConnection:Disconnect()
@@ -76,15 +99,15 @@ function LeaksController.StartRandomizer()
 	end
 
 	RandomizerConnection = RunService.Heartbeat:Connect(function(dt: number)
-		for i = 0, LeaksController.ChanceBreakAmount do
+		for _ = 0, LeaksController.ChanceBreakAmount do
 			if math.random() < (LeaksController.ChanceToBreak * dt) then LeaksController.BreakRandom() end
 		end
 	end)
 end
 
 function LeaksController.StopRandomizer()
-	if not LeaksController.IsRandomizedActive then return end
-	LeaksController.IsRandomizedActive = false
+	if not LeaksController.IsRandomizerActive then return end
+	LeaksController.IsRandomizerActive = false
 
 	if RandomizerConnection then
 		RandomizerConnection:Disconnect()
@@ -134,6 +157,9 @@ function LeaksController.Break(attachment: Attachment, level: number)
 	newLeak.Parent = attachment
 	CurrentLeaks[newLeak] = true
 
+	SoundsController.Play(ESounds.MetalHit1, newLeak)
+	SoundsController.Play(ESounds.MetalHit2, newLeak)
+
 	LeaksController.OnLeakCreated:Fire(level)
 end
 
@@ -150,7 +176,8 @@ local function UpdateFixing(dt: number)
 	local origin = Camera.CFrame.Position
 	local direction = Camera.CFrame.LookVector * MAX_FIX_DISTANCE
 	local params = RaycastParams.new()
-	params.FilterDescendantsInstances = { character, WaterLeaksEffects }
+
+	params.FilterDescendantsInstances = { character, WaterLeaksEffects, Colliders }
 	params.FilterType = Enum.RaycastFilterType.Exclude
 
 	local result = Workspace:Raycast(origin, direction, params)
@@ -181,11 +208,16 @@ end
 
 function LeaksController.EnableBlowtorch()
 	LeaksController.CanUseBlowtorch = true
+	SoundsController.PlayCharacter(ESounds.Equip)
+
+	if BlowtorchIdle then BlowtorchIdle:Play(0.2, 1, 0.3) end
 end
 
 function LeaksController.DisableBlowtorch()
 	LeaksController.CanUseBlowtorch = false
 	stopBlowtorch()
+
+	if BlowtorchIdle then BlowtorchIdle:Stop(0.2) end
 end
 
 function LeaksController.Reset()
@@ -201,13 +233,45 @@ function LeaksController.Reset()
 	table.clear(CurrentLeaks)
 end
 
+LeaksController.OnCharacterAdded = function(character: TCharacter.TCharacter, characterEntity: jecs.Entity)
+	local animator = World:get(characterEntity, Components.Animator)
+
+	if not animator then
+		warn("Humanoid / HumanoidRootPart / Butler are nil")
+		return
+	end
+
+	BlowtorchIdle = animator:LoadAnimation(BlowtorchIdleAnim)
+	BlowtorchUse = animator:LoadAnimation(BlowtorchUseAnim)
+
+	BlowtorchEffects = character
+		:WaitForChild("Blowtorch")
+		:WaitForChild("Pipe")
+		:WaitForChild("Effects")
+		:WaitForChild("Effects") :: Attachment
+
+	if BlowtorchEffects then
+		for _, emitter in BlowtorchEffects:GetDescendants() do
+			if emitter:IsA("ParticleEmitter") then emitter.Enabled = false end
+		end
+	end
+end
+
 UserInputService.InputBegan:Connect(function(input, gp)
 	if gp then return end
 	if input.UserInputType ~= Enum.UserInputType.MouseButton2 then return end
 	if not LeaksController.CanUseBlowtorch then return end
 
-	BlowtorchStart:Play()
-	BlowtorchLoop:Play()
+	SoundsController.PlayCharacter(ESounds.BlowtorchStart)
+	SoundsController.PlayLoop(ESounds.BlowtorchLoop, SoundService, true)
+	if BlowtorchUse then BlowtorchUse:Play(0.2, 1, 1) end
+
+	if BlowtorchEffects then
+		for _, emitter in BlowtorchEffects:GetDescendants() do
+			if emitter:IsA("ParticleEmitter") then emitter.Enabled = true end
+		end
+	end
+
 	if not FixConnection then FixConnection = RunService.Heartbeat:Connect(UpdateFixing) end
 end)
 

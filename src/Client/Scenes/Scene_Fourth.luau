@@ -1,6 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local StarterPlayer = game:GetService("StarterPlayer")
-local CameraController = require(StarterPlayer.StarterPlayerScripts.Client.Controllers.CameraController)
+local CameraController = require(script.Parent.Parent.Controllers.CameraController)
 local DepthController = require(script.Parent.Parent.Controllers.DepthController)
 local EngineController = require(script.Parent.Parent.Controllers.EngineController)
 local PressureController = require(script.Parent.Parent.Controllers.PressureController)
@@ -28,10 +27,12 @@ Scene_Fourth.CurrentPromise = nil
 function Scene_Fourth.Start()
 	Scene_Fourth.IsActive = true
 
+	WaterController.StartRise()
 	EngineController.StopEngine()
 	DepthController.Start()
 	PressureController.Start()
 	LeaksController.StopRandomizer()
+	ValveController.DisableAllValves()
 	LightController.Stop()
 
 	Scene_Fourth.CurrentPromise = Promise.delay(0.5)
@@ -57,14 +58,25 @@ function Scene_Fourth.Start()
 				EngineController.StartEngine()
 				LeaksController.StartRandomizer()
 				LightController.Start()
-
 				ValveController.EnableAllValves()
 
+				EngineController.LevelUpSpeed = EngineController.LEVEL_UP_SPEED_FOURTH
+				EngineController.LevelMiddleSpeed = EngineController.LEVEL_MIDDLE_SPEED_FOURTH
+				EngineController.LevelDownSpeed = EngineController.LEVEL_DOWN_SPEED_FOURTH
+
+				LightController.ChanceToBreak = LightController.CHANCE_TO_BREAK_FOURTH
+
 				local debounce = false
-				local activatedOtherValve = false
+				local halfDebounce = false
 				local connection: Signal.Connection?
 
 				connection = DepthController.OnDepthChanged:Connect(function(_, new)
+					if new < DepthController.FOURTH_DEPTH / 2 then return end
+
+					if not halfDebounce then
+						LightController.ChanceToBreak = LightController.CHANCE_TO_BREAK_FOURTH_HALF
+					end
+
 					if new < DepthController.FOURTH_DEPTH or debounce then return end
 
 					debounce = true

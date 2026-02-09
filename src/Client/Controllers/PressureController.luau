@@ -28,7 +28,7 @@ local VALVE_LOW_PRESSURE_SPEED = 1
 local VALVE_MEDIUM_PRESSURE_SPEED = 3
 local VALVE_HIGH_PRESSURE_SPEED = 5
 
-local PRESSURE_NATURAL_SPEED = 15
+local PRESSURE_NATURAL_SPEED = 20
 
 local MAX_PRESSURE = 500
 local LOWER_PRESSURE = 0
@@ -36,6 +36,7 @@ local LOWER_PRESSURE = 0
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui") :: PlayerGui
 local PressureSurfaceGui = PlayerGui:WaitForChild("Pressure") :: SurfaceGui
+local PressureNameSurfaceGui = PlayerGui:WaitForChild("PressureName") :: SurfaceGui
 local Gradient = PressureSurfaceGui:WaitForChild("Background"):WaitForChild("UIGradient") :: UIGradient
 Gradient.Color = DEFAULT_GRADIENT
 
@@ -163,10 +164,12 @@ end
 
 LightController.OnMainLightBroke:Connect(function()
 	PressureSurfaceGui.Enabled = false
+	PressureNameSurfaceGui.Enabled = false
 end)
 
 LightController.OnMainLightFixed:Connect(function()
 	PressureSurfaceGui.Enabled = true
+	PressureNameSurfaceGui.Enabled = true
 end)
 
 return Ignis.Register(PressureController)

@@ -4,7 +4,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
-local LeaksController = require(script.Parent.LeaksController)
 local Ignis = require(ReplicatedStorage.Packages.Ignis)
 local jecs = require(ReplicatedStorage.Packages.jecs)
 local Components = require(ReplicatedStorage.Shared.ECS.Components)
@@ -25,6 +24,8 @@ type ShakeInstance = {
 
 local DEFAULT_POS = Vector3.new(0.5, 0.5, 0.5)
 local DEFAULT_ROT = Vector3.new(0.05, 0.05, 0.05)
+local TRANSITION_SPEED = 4
+local LOOK_AT_SPEED = 4
 
 local Player = Players.LocalPlayer
 local Mouse = Player:GetMouse()
@@ -47,9 +48,11 @@ CameraController.CinematicCameraActive = false
 CameraController.IsFlying = false
 CameraController.ShakeMultiplier = 1
 
-local TransitionStartCFrame: CFrame? = nil
+local TransitionStartCFrame: CFrame?
 local TransitionAlpha = 1
-local TRANSITION_SPEED = 4
+
+local LookAtTarget: Vector3?
+local LookAtAlpha = 0
 
 function CameraController.LockCamera()
 	CameraController.CameraLocked = true
@@ -62,22 +65,27 @@ function CameraController.UnlockCamera()
 end
 
 function CameraController.EnableCinematicCamera()
-	LeaksController.DisableBlowtorch()
-
 	CameraController.UnlockCamera()
 	CameraController.CinematicCameraActive = true
-	TransitionAlpha = 1
+	TransitionStartCFrame = Camera.CFrame
+	TransitionAlpha = 0
 end
 
 function CameraController.DisableCinematicCamera()
-	LeaksController.EnableBlowtorch()
-
 	TransitionStartCFrame = Camera.CFrame
 	TransitionAlpha = 0
+	LookAtTarget = nil
+	LookAtAlpha = 0
 
 	CameraController.LockCamera()
 	Camera.CameraSubject = if Player.Character then Player.Character:FindFirstChild("Head") else nil
 	CameraController.CinematicCameraActive = false
+end
+
+function CameraController.LookAt(pos: Vector3)
+	if not CameraController.CinematicCameraActive then return end
+	LookAtTarget = pos
+	LookAtAlpha = 0
 end
 
 function CameraController.ToggleCameraLock()
@@ -177,6 +185,8 @@ CameraController.OnCharacterAdded = function(character: TCharacter.TCharacter, c
 			return
 		end
 
+		local shakeCF = computeShakeOffset()
+
 		if CameraController.CinematicCameraActive then
 			if Camera.CameraType ~= Enum.CameraType.Scriptable then Camera.CameraType = Enum.CameraType.Scriptable end
 
@@ -184,24 +194,47 @@ CameraController.OnCharacterAdded = function(character: TCharacter.TCharacter, c
 			local OffsetX = ((Mouse.X - viewportSize.X / 2) / (viewportSize.X / 2)) * MaxOffset
 			local OffsetY = ((Mouse.Y - viewportSize.Y / 2) / (viewportSize.Y / 2)) * MaxOffset
 
-			local rotation =
+			local swayRotation =
 				CFrame.Angles(math.rad(-OffsetY * CameraSensitivity), math.rad(-OffsetX * CameraSensitivity), 0)
-			local baseCFrame = Camera.CameraSubject.CFrame * rotation
+
+			local subjectCF = Camera.CameraSubject.CFrame
+			local baseRotation = subjectCF.Rotation
+
+			if LookAtTarget then
+				LookAtAlpha = math.min(LookAtAlpha + (dt * LOOK_AT_SPEED), 1)
+				local targetRotation = CFrame.lookAt(subjectCF.Position, LookAtTarget).Rotation
+				baseRotation = baseRotation:Lerp(targetRotation, LookAtAlpha)
+			end
+
+			local baseCFrame = CFrame.new(subjectCF.Position) * baseRotation * swayRotation * shakeCF
 
 			local _, y, _ = baseCFrame:ToOrientation()
 			local flatRot = CFrame.Angles(0, y, 0)
-
 			local relativeOffset = flatRot * humanoid.CameraOffset
 
+			local targetCFrame = baseCFrame + relativeOffset
 			Camera.Focus = Camera.CameraSubject.CFrame
-			Camera.CFrame = baseCFrame + relativeOffset
+
+			if TransitionAlpha < 1 then
+				TransitionAlpha = math.min(TransitionAlpha + (dt * TRANSITION_SPEED), 1)
+				if TransitionStartCFrame then
+					Camera.CFrame = TransitionStartCFrame:Lerp(targetCFrame, TransitionAlpha)
+				else
+					Camera.CFrame = targetCFrame
+				end
+			else
+				Camera.CFrame = targetCFrame
+			end
+
+			if CameraController.AutoRotate then
+				character.HumanoidRootPart.CFrame = CFrame.new(character.HumanoidRootPart.Position)
+					* CFrame.Angles(0, y, 0)
+			end
 
 			return
 		end
 
 		if Camera.CameraType == Enum.CameraType.Scriptable then Camera.CameraType = Enum.CameraType.Custom end
-
-		local shakeCF = computeShakeOffset()
 
 		local _, y, _ = Camera.CFrame:ToOrientation()
 

@@ -27,6 +27,7 @@ Scene_Second.CurrentPromise = nil
 function Scene_Second.Start()
 	Scene_Second.IsActive = true
 
+	WaterController.StartRise()
 	LeaksController.EnableBlowtorch()
 	DepthController.Start()
 	PressureController.Start()
@@ -38,19 +39,24 @@ function Scene_Second.Start()
 				CameraController.Shake(2, 0.1, 1, Vector3.new(0.2, 0.2, 0.2), Vector3.zero, 0.4)
 
 				EngineController.StartEngine()
+
+				EngineController.LevelUpSpeed = EngineController.LEVEL_UP_SPEED * 2
+				EngineController.LevelMiddleSpeed = EngineController.LEVEL_MIDDLE_SPEED * 2
+				EngineController.LevelDownSpeed = EngineController.LEVEL_DOWN_SPEED * 2
+
 				LightController.Start()
 
 				ValveController.EnableRandomValve()
 
 				local debounce = false
-				local activatedOtherValve = false
+				local halfDebounce = false
 				local connection: Signal.Connection?
 
 				connection = DepthController.OnDepthChanged:Connect(function(_, new)
-					if new < DepthController.SECOND_DEPTH / 1.7 then return end
+					if new < DepthController.SECOND_DEPTH / 2 then return end
 
-					if not activatedOtherValve then
-						activatedOtherValve = true
+					if not halfDebounce then
+						halfDebounce = true
 						ValveController.EnableRandomValve()
 					end
 
