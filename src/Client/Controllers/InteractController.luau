@@ -3,12 +3,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local EngineController = require(script.Parent.EngineController)
 local LightController = require(script.Parent.LightController)
 local ValveController = require(script.Parent.ValveController)
 local Ignis = require(ReplicatedStorage.Packages.Ignis)
-local Highlight = require(ReplicatedStorage.Shared.Utils.Highlight)
+local Highlights = require(ReplicatedStorage.Shared.Utils.Highlights)
 
-local MAX_DISTANCE = 10
+local MAX_DISTANCE = 6
 
 local Camera = Workspace.CurrentCamera
 local InteractablesList = CollectionService:GetTagged("Interactable")
@@ -34,6 +35,27 @@ local function getObject(hit: BasePart): BasePart?
 	return model.PrimaryPart
 end
 
+local function stopInteraction()
+	if not Hold then return end
+
+	if CurrentPart then
+		local object = getObject(CurrentPart)
+		if object then
+			if object:HasTag("Valve") then
+				ValveController.ValveStop()
+			elseif object:HasTag("Lever") then
+				EngineController.LeverStop()
+			end
+		end
+	end
+
+	Hold = false
+end
+
+function InteractController.Reset()
+	stopInteraction()
+end
+
 RunService.Heartbeat:Connect(function()
 	local origin = Camera.CFrame.Position
 	local direction = Camera.CFrame.LookVector * MAX_DISTANCE
@@ -43,13 +65,24 @@ RunService.Heartbeat:Connect(function()
 
 	if hit == CurrentPart then return end
 
-	if Hold then return end
+	if Hold and CurrentPart then
+		local object = getObject(CurrentPart)
+		if not object then return end
+
+		local dist = (object.Position - origin).Magnitude
+		if dist <= MAX_DISTANCE then return end
+
+		stopInteraction()
+		Highlights.Remove(object)
+		CurrentPart = nil
+		return
+	end
 
 	if CurrentPart then
 		local object = getObject(CurrentPart)
 		if not object then return end
 
-		Highlight.Remove(object)
+		Highlights.Remove(object)
 		CurrentPart = nil
 	end
 
@@ -57,7 +90,7 @@ RunService.Heartbeat:Connect(function()
 		local object = getObject(hit)
 		if not object then return end
 
-		Highlight.Add(object)
+		Highlights.Add(object)
 		CurrentPart = hit
 	end
 end)
@@ -72,22 +105,25 @@ UserInputService.InputBegan:Connect(function(input, gp)
 	if object:HasTag("Valve") then
 		Hold = true
 		ValveController.ValveTouched(object)
+	elseif object:HasTag("Lever") then
+		Hold = true
+		EngineController.LeverTouched(object)
 	elseif object:HasTag("Lightbulbs") then
-		LightController.Grab()
+		LightController.GrabBulb()
 	elseif object:HasTag("Light") then
-		LightController.Replace(object :: any)
+		LightController.Fix(object :: any)
 	end
 end)
 
 UserInputService.InputEnded:Connect(function(input, gp)
 	if gp then return end
 	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
-	if not CurrentPart then return end
-	local object = getObject(CurrentPart)
-	if not object then return end
 
-	if object:HasTag("Valve") then ValveController.ValveStop() end
-	Hold = false
+	stopInteraction()
+end)
+
+UserInputService.WindowFocusReleased:Connect(function()
+	stopInteraction()
 end)
 
 return Ignis.Register(InteractController)

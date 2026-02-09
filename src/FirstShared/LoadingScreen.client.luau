@@ -33,6 +33,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.SafeAreaCompatibility = Enum.SafeAreaCompatibility.None
 ScreenGui.ScreenInsets = Enum.ScreenInsets.None
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.DisplayOrder = 10
 
 local CanvasGroup = Instance.new("CanvasGroup")
 CanvasGroup.Name = "MainCanvas"

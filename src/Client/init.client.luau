@@ -4,5 +4,6 @@ local Ignis = require(ReplicatedStorage.Packages.Ignis)
 Ignis.LoadDescendants(script.Modding)
 Ignis.LoadDescendants(script.Controllers)
 Ignis.LoadDescendants(ReplicatedStorage.Shared.Core)
+Ignis.LoadDescendants(ReplicatedStorage.Shared.Modding)
 
 Ignis.Ignite()

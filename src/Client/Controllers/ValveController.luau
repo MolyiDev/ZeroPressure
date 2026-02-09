@@ -1,60 +1,156 @@
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Ignis = require(ReplicatedStorage.Packages.Ignis)
+local Signal = require(ReplicatedStorage.Packages.Signal)
 
-type Valve = BasePart
-type PressureLevel = "None" | "Low" | "Medium" | "High"
+export type Valve = { Effects: Attachment } & BasePart
+export type PressureLevel = "None" | "Low" | "Medium" | "High" | "Final"
+export type ValveState = {
+	Enabled: boolean,
+	Velocity: number,
+	PressureSeconds: number,
+	CurrentPressure: PressureLevel,
+	CurrentEffect: Attachment?,
+}
 
-local Valves = CollectionService:GetTagged("Valve") :: { Valve }
-local CurrentValve: BasePart?
-local Connection: RBXScriptConnection?
+local TW_EFFECT = TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 
 local FULL_ROTATION_RIGHT = math.rad(179)
 local FULL_ROTATION_LEFT = math.rad(-179)
-local RIGHT_SPEED = (FULL_ROTATION_RIGHT - FULL_ROTATION_LEFT) / 15
+local RIGHT_SPEED_DEFAULT = (FULL_ROTATION_RIGHT - FULL_ROTATION_LEFT) / 15
+local RIGHT_SPEED_TUTORIAL = (FULL_ROTATION_RIGHT - FULL_ROTATION_LEFT) / 2
+local LEFT_SPEED_ROTATION = 1.6
 
 local AUTO_RESTORE_SMOOTHNESS = 2
 local TOUCH_FRICTION = 5
 local INPUT_SENSITIVITY = 5
 
-local THRESHOLD_LOW = 10
-local THRESHOLD_MEDIUM = 17
-local THRESHOLD_HIGH = 25
+local THRESHOLD_LOW = 7
+local THRESHOLD_MEDIUM = 14
+local THRESHOLD_HIGH = 21
+local THRESHOLD_FINAL = 26
 
-local ValveStates: { [Valve]: {
-	Velocity: number,
-	PressureSeconds: number,
-	CurrentPressure: PressureLevel,
-} } = {}
+local Valves = CollectionService:GetTagged("Valve") :: { Valve }
+local CurrentValve: Valve?
+local Connection: RBXScriptConnection?
+
+local ValveEffects = ReplicatedStorage:WaitForChild("Effects"):WaitForChild("Valves") :: Folder
+local ValveLowEffect = ValveEffects:WaitForChild("Low") :: Attachment
+local ValveMediumEffect = ValveEffects:WaitForChild("Medium") :: Attachment
+local ValveHighEffect = ValveEffects:WaitForChild("High") :: Attachment
+
+local ValveStates: {
+	[Valve]: ValveState,
+} = {}
 
 local ValveController = {}
-ValveController.Thresholds = {
+ValveController.OnValveClosed = Signal.new()
+ValveController.EPressureLevels = table.freeze({
+	None = "None",
+	Low = "Low",
+	Medium = "Medium",
+	High = "High",
+})
+ValveController.RIGHT_SPEED_DEFAULT = RIGHT_SPEED_DEFAULT
+ValveController.RIGHT_SPEED_TUTORIAL = RIGHT_SPEED_TUTORIAL
+ValveController.RightSpeed = RIGHT_SPEED_DEFAULT
+ValveController.EnabledValvesCount = 0
+ValveController.ValvesCount = #Valves
+ValveController.LowValvesCount = 0
+ValveController.MediumValvesCount = 0
+ValveController.HighValvesCount = 0
+
+ValveController.BaseThresholds = {
 	Low = THRESHOLD_LOW,
 	Medium = THRESHOLD_MEDIUM,
 	High = THRESHOLD_HIGH,
+	Final = THRESHOLD_FINAL,
 }
 
+ValveController.Thresholds = table.clone(ValveController.BaseThresholds)
+
+local function getThresholdMultiplier()
+	if ValveController.RightSpeed == 0 then return 1 end
+	return ValveController.RIGHT_SPEED_DEFAULT / ValveController.RightSpeed
+end
+
+local function removeCurrentEffect(valve: ValveState)
+	local effect = valve.CurrentEffect
+	valve.CurrentEffect = nil
+	if not effect then return end
+
+	for _, emitter in effect:GetDescendants() do
+		if emitter:IsA("ParticleEmitter") then
+			TweenService:Create(emitter, TW_EFFECT, { Rate = 0 }):Play()
+		elseif emitter:IsA("Beam") then
+			TweenService:Create(emitter, TW_EFFECT, { Width0 = 0, Width1 = 0 }):Play()
+		end
+	end
+
+	task.delay(TW_EFFECT.Time * 2, function()
+		effect:Destroy()
+	end)
+end
+
 local function getPressureLevel(seconds: number): PressureLevel
-	if seconds >= ValveController.Thresholds.High then
+	local mult = getThresholdMultiplier()
+
+	if seconds >= (ValveController.BaseThresholds.High * mult) then
 		return "High"
-	elseif seconds >= ValveController.Thresholds.Medium then
+	elseif seconds >= (ValveController.BaseThresholds.Medium * mult) then
 		return "Medium"
-	elseif seconds >= ValveController.Thresholds.Low then
+	elseif seconds >= (ValveController.BaseThresholds.Low * mult) then
 		return "Low"
 	else
 		return "None"
 	end
 end
 
-local function pressureChanged(valve: BasePart, oldLevel: PressureLevel, newLevel: PressureLevel)
-	print(string.format("Valve %s changed from %s to %s", valve.Name, oldLevel, newLevel))
+local function pressureChanged(valve: Valve, oldLevel: PressureLevel, newLevel: PressureLevel)
+	if oldLevel == "Low" then
+		ValveController.LowValvesCount -= 1
+	elseif oldLevel == "Medium" then
+		ValveController.MediumValvesCount -= 1
+	elseif oldLevel == "High" then
+		ValveController.HighValvesCount -= 1
+	end
 
-	-- VFX or SFX
+	if newLevel == "Low" then
+		ValveController.LowValvesCount += 1
+	elseif newLevel == "Medium" then
+		ValveController.MediumValvesCount += 1
+	elseif newLevel == "High" then
+		ValveController.HighValvesCount += 1
+	end
+
+	if newLevel == "None" then ValveController.OnValveClosed:Fire() end
+
+	-- VFX
+	local state = ValveStates[valve]
+	if not state then return end
+
+	removeCurrentEffect(state)
+
+	local template
+	if newLevel == "Low" then
+		template = ValveLowEffect
+	elseif newLevel == "Medium" then
+		template = ValveMediumEffect
+	elseif newLevel == "High" then
+		template = ValveHighEffect
+	end
+
+	if template then
+		local effect = template:Clone()
+		effect.Parent = valve.Effects
+		state.CurrentEffect = effect
+	end
 end
 
-function ValveController.ValveTouched(valve: BasePart)
+function ValveController.ValveTouched(valve: Valve)
 	CurrentValve = valve
 end
 
@@ -62,45 +158,115 @@ function ValveController.ValveStop()
 	CurrentValve = nil
 end
 
-function ValveController.Start()
+function ValveController.EnableValve(valve: Valve, initialPressureLevel: PressureLevel?)
+	local state = ValveStates[valve]
+	if not state then return end
+
+	local oldLevel = state.CurrentPressure
+	local newLevel = initialPressureLevel or "None"
+
+	ValveController.EnabledValvesCount += 1
+	state.Enabled = true
+	state.CurrentPressure = newLevel :: PressureLevel
+
+	local mult = getThresholdMultiplier()
+
+	if newLevel == "High" then
+		state.PressureSeconds = ValveController.BaseThresholds.High * mult
+	elseif newLevel == "Medium" then
+		state.PressureSeconds = ValveController.BaseThresholds.Medium * mult
+	elseif newLevel == "Low" then
+		state.PressureSeconds = ValveController.BaseThresholds.Low * mult
+	else
+		state.PressureSeconds = 0
+	end
+
+	if oldLevel ~= newLevel then pressureChanged(valve, oldLevel :: any, newLevel :: any) end
+end
+
+function ValveController.DisableValve(valve: Valve)
+	local state = ValveStates[valve]
+	if not state then return end
+
+	local oldLevel = state.CurrentPressure
+	ValveController.EnabledValvesCount -= 1
+
+	state.Enabled = false
+	state.PressureSeconds = 0
+	state.CurrentPressure = "None"
+
+	if oldLevel ~= "None" then pressureChanged(valve, oldLevel :: any, "None") end
+end
+
+function ValveController.EnableRandomValve(initialPressureLevel: PressureLevel?): Valve?
+	local disabledValves = {}
+
+	for _, valve in Valves do
+		local state = ValveStates[valve]
+		if state and not state.Enabled then disabledValves[#disabledValves + 1] = valve end
+	end
+
+	if #disabledValves > 0 then
+		local randomValve = disabledValves[math.random(1, #disabledValves)]
+		ValveController.EnableValve(randomValve, initialPressureLevel)
+		return randomValve
+	end
+
+	return nil -- All valves are already enabled
+end
+
+function ValveController.EnableAllValves(initialPressureLevel: PressureLevel?)
+	for _, valve in Valves do
+		ValveController.EnableValve(valve, initialPressureLevel)
+	end
+end
+
+function ValveController.OnStart()
 	if Connection then Connection:Disconnect() end
 
 	Connection = RunService.Heartbeat:Connect(function(dt: number)
 		local mouseDelta = UserInputService:GetMouseDelta()
+
+		local mult = getThresholdMultiplier()
+		local currentFinalThreshold = ValveController.BaseThresholds.Final * mult
 
 		for _, valve in Valves do
 			if not valve:IsA("BasePart") then continue end
 
 			if not ValveStates[valve] then
 				ValveStates[valve] = {
-					Velocity = RIGHT_SPEED,
+					Velocity = 0,
 					PressureSeconds = 0,
 					CurrentPressure = "None",
+					Enabled = false,
 				}
 			end
 
 			local state = ValveStates[valve]
 
-			if valve == CurrentValve then
+			if valve == CurrentValve :: any then
 				state.Velocity = state.Velocity + (0 - state.Velocity) * (dt * TOUCH_FRICTION)
 
 				if mouseDelta.Magnitude > 0 then
 					state.Velocity = state.Velocity - (mouseDelta.Magnitude * INPUT_SENSITIVITY * dt)
 				end
 			else
-				local targetSpeed = RIGHT_SPEED
+				local targetSpeed = state.Enabled and ValveController.RightSpeed or 0
 
-				if state.PressureSeconds >= ValveController.Thresholds.High then targetSpeed = 0 end
+				if state.PressureSeconds >= currentFinalThreshold then targetSpeed = 0 end
 
 				local lerpFactor = math.clamp(dt * AUTO_RESTORE_SMOOTHNESS, 0, 1)
 				state.Velocity = state.Velocity + (targetSpeed - state.Velocity) * lerpFactor
 			end
 
-			valve.CFrame = valve.CFrame * CFrame.Angles(0, 0, state.Velocity * dt)
+			valve.CFrame = valve.CFrame * CFrame.Angles(state.Velocity * dt, 0, 0)
 
-			local speedRatio = state.Velocity / RIGHT_SPEED
-			state.PressureSeconds =
-				math.clamp(state.PressureSeconds + (speedRatio * dt), 0, ValveController.Thresholds.High)
+			local divisor = (state.Velocity < 0) and LEFT_SPEED_ROTATION or ValveController.RightSpeed
+			if divisor == 0 then divisor = 1 end
+
+			local speedRatio = state.Velocity / divisor
+
+			state.PressureSeconds = math.clamp(state.PressureSeconds + (speedRatio * dt), 0, currentFinalThreshold)
 
 			local newLevel = getPressureLevel(state.PressureSeconds)
 			if newLevel ~= state.CurrentPressure then
@@ -121,25 +287,34 @@ function ValveController.Stop()
 end
 
 function ValveController.Reset()
+	ValveController.LowValvesCount = 0
+	ValveController.MediumValvesCount = 0
+	ValveController.HighValvesCount = 0
+	ValveController.EnabledValvesCount = 0
+
 	for _, valve in Valves do
 		if not valve:IsA("BasePart") then continue end
-		local yOrientation = (valve:GetAttribute("YOrientation") :: number) or 0
-		valve.CFrame = CFrame.new(valve.Position) * CFrame.Angles(0, yOrientation, 0)
 
-		ValveStates[valve] = {
-			Velocity = RIGHT_SPEED,
-			PressureSeconds = 0,
-			CurrentPressure = "None",
-		}
+		local state = ValveStates[valve]
+		if not state then continue end
+
+		removeCurrentEffect(state)
+
+		state.Velocity = 0
+		state.PressureSeconds = 0
+		state.CurrentPressure = "None"
+		state.Enabled = false
 	end
 
-	ValveController.Thresholds = {
+	ValveController.BaseThresholds = {
 		Low = THRESHOLD_LOW,
 		Medium = THRESHOLD_MEDIUM,
 		High = THRESHOLD_HIGH,
+		Final = THRESHOLD_FINAL,
 	}
-end
 
-ValveController.Start()
+	ValveController.Thresholds = table.clone(ValveController.BaseThresholds)
+	ValveController.RightSpeed = RIGHT_SPEED_DEFAULT
+end
 
 return Ignis.Register(ValveController)
