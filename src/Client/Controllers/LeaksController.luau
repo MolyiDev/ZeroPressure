@@ -18,11 +18,12 @@ local TCharacter = require(ReplicatedStorage.Types.TCharacter)
 type WaterLeak = { ParticleEmitter } & Attachment
 
 local TW_FIX = TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-local CHANCE_TO_BREAK_DEFAULT = 0.01
+local CHANCE_TO_BREAK_DEFAULT = 0.03
 local CHANCE_BREAK_AMOUNT = 2
 local FIX_TIME = 0.6
 local MAX_FIX_DISTANCE = 10
 local LEAK_HIT_RADIUS = 2
+local CHECK_INTERVAL = 1 / 60
 
 local Player = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -68,8 +69,13 @@ LeaksController.CanUseBlowtorch = false
 LeaksController.IsRandomizerActive = false
 LeaksController.ChanceToBreak = CHANCE_TO_BREAK_DEFAULT
 LeaksController.ChanceBreakAmount = CHANCE_BREAK_AMOUNT
+LeaksController.CHANCE_TO_BREAK_DEFAULT = CHANCE_TO_BREAK_DEFAULT
+LeaksController.CHANCE_TO_BREAK_THIRD_HALF = CHANCE_TO_BREAK_DEFAULT * 1.5
+LeaksController.CHANCE_TO_BREAK_FOURTH = CHANCE_TO_BREAK_DEFAULT * 2
+LeaksController.CHANCE_TO_BREAK_FOURTH_HALF = CHANCE_TO_BREAK_DEFAULT * 2.5
 
 local RandomizerConnection: RBXScriptConnection?
+local Accumulator = 0
 
 local function stopBlowtorch()
 	SoundsController.StopLoop(ESounds.BlowtorchLoop, SoundService, true)
@@ -99,8 +105,15 @@ function LeaksController.StartRandomizer()
 	end
 
 	RandomizerConnection = RunService.Heartbeat:Connect(function(dt: number)
-		for _ = 0, LeaksController.ChanceBreakAmount do
-			if math.random() < (LeaksController.ChanceToBreak * dt) then LeaksController.BreakRandom() end
+		Accumulator += dt
+
+		while Accumulator >= CHECK_INTERVAL do
+			Accumulator -= CHECK_INTERVAL
+			for _ = 0, LeaksController.ChanceBreakAmount do
+				if math.random() < (LeaksController.ChanceToBreak * CHECK_INTERVAL) then
+					LeaksController.BreakRandom()
+				end
+			end
 		end
 	end)
 end
@@ -207,6 +220,7 @@ local function UpdateFixing(dt: number)
 end
 
 function LeaksController.EnableBlowtorch()
+	if LeaksController.CanUseBlowtorch then return end
 	LeaksController.CanUseBlowtorch = true
 	SoundsController.PlayCharacter(ESounds.Equip)
 
@@ -214,6 +228,7 @@ function LeaksController.EnableBlowtorch()
 end
 
 function LeaksController.DisableBlowtorch()
+	if not LeaksController.CanUseBlowtorch then return end
 	LeaksController.CanUseBlowtorch = false
 	stopBlowtorch()
 

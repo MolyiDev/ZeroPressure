@@ -25,11 +25,13 @@ type Light = {
 
 local TW_ON = TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 local TW_OFF = TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.In)
-local CHANCE_TO_BREAK_DEFAULT = 0.01
+local CHANCE_TO_BREAK_DEFAULT = 0.03
 
 local SHATTER_EMIT_COUNT = 30
 local SPARKS_EMIT_COUNT = 30
 local SMOKE_EMIT_COUNT = 3
+
+local CHECK_INTERVAL = 1 / 60
 
 local MainLight = CollectionService:GetTagged("MainLight")[1] :: Light
 local EngineLight = CollectionService:GetTagged("EngineLight")[1] :: Light
@@ -53,12 +55,14 @@ LightController.OnBulbGrabbed = Signal.new()
 LightController.IsActive = false
 LightController.HasLightbulb = false
 LightController.CHANCE_TO_BREAK_DEFAULT = CHANCE_TO_BREAK_DEFAULT
-LightController.CHANCE_TO_BREAK_THIRD = CHANCE_TO_BREAK_DEFAULT * 2
-LightController.CHANCE_TO_BREAK_THIRD_HALF = CHANCE_TO_BREAK_DEFAULT * 3
-LightController.CHANCE_TO_BREAK_FOURTH = CHANCE_TO_BREAK_DEFAULT * 4
-LightController.CHANCE_TO_BREAK_FOURTH_HALF = CHANCE_TO_BREAK_DEFAULT * 5
+LightController.CHANCE_TO_BREAK_THIRD = CHANCE_TO_BREAK_DEFAULT * 1.5
+LightController.CHANCE_TO_BREAK_THIRD_HALF = CHANCE_TO_BREAK_DEFAULT * 2
+LightController.CHANCE_TO_BREAK_FOURTH = CHANCE_TO_BREAK_DEFAULT * 2.5
+LightController.CHANCE_TO_BREAK_FOURTH_HALF = CHANCE_TO_BREAK_DEFAULT * 3
 LightController.ChanceToBreak = CHANCE_TO_BREAK_DEFAULT
 LightController.LightbulbCage = CollectionService:GetTagged("Lightbulbs")[1]
+
+local Accumulator = 0
 
 function LightController.Start()
 	if LightController.IsActive then return end
@@ -69,9 +73,18 @@ function LightController.Start()
 	end
 
 	Connection = RunService.Heartbeat:Connect(function(dt: number)
-		for _, light in Lights do
-			if LightsBroken[light] then continue end
-			if math.random() < (LightController.ChanceToBreak * dt) then LightController.Break(light) end
+		Accumulator += dt
+
+		while Accumulator >= CHECK_INTERVAL do
+			Accumulator -= CHECK_INTERVAL
+
+			for _, light in Lights do
+				if LightsBroken[light] then continue end
+
+				if math.random() < (LightController.ChanceToBreak * CHECK_INTERVAL) then
+					LightController.Break(light)
+				end
+			end
 		end
 	end)
 end

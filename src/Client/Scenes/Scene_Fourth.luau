@@ -54,8 +54,8 @@ function Scene_Fourth.Start()
 				-- TODO: Cut down the cable.
 				CameraController.Shake(2, 0.1, 1, Vector3.new(0.2, 0.2, 0.2), Vector3.zero, 0.4)
 
-				LeaksController.EnableBlowtorch()
 				EngineController.StartEngine()
+				LeaksController.EnableBlowtorch()
 				LeaksController.StartRandomizer()
 				LightController.Start()
 				ValveController.EnableAllValves()
@@ -65,6 +65,8 @@ function Scene_Fourth.Start()
 				EngineController.LevelDownSpeed = EngineController.LEVEL_DOWN_SPEED_FOURTH
 
 				LightController.ChanceToBreak = LightController.CHANCE_TO_BREAK_FOURTH
+				LeaksController.ChanceToBreak = LeaksController.CHANCE_TO_BREAK_FOURTH
+				ValveController.RightSpeed = ValveController.RIGHT_SPEED_FOURTH
 
 				local debounce = false
 				local halfDebounce = false
@@ -75,6 +77,8 @@ function Scene_Fourth.Start()
 
 					if not halfDebounce then
 						LightController.ChanceToBreak = LightController.CHANCE_TO_BREAK_FOURTH_HALF
+						LeaksController.ChanceToBreak = LeaksController.CHANCE_TO_BREAK_FOURTH_HALF
+						ValveController.RightSpeed = ValveController.RIGHT_SPEED_FOURTH_HALF
 					end
 
 					if new < DepthController.FOURTH_DEPTH or debounce then return end

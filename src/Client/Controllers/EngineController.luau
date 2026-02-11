@@ -18,9 +18,9 @@ local LEVEL_MIDDLE_STRESS = 5
 local LEVEL_DOWN_STRESS = -25
 
 -- for engine speeds
-local LEVEL_UP_SPEED = 30
-local LEVEL_MIDDLE_SPEED = 25
-local LEVEL_DOWN_SPEED = 15
+local LEVEL_UP_SPEED = 28
+local LEVEL_MIDDLE_SPEED = 18
+local LEVEL_DOWN_SPEED = 9
 
 local SPEED_CHANGE_SPEED = 15 -- how fast the engine rpm adjusts
 

@@ -5,8 +5,9 @@ local Workspace = game:GetService("Workspace")
 local SoundsController = require(script.Parent.SoundsController)
 local Ignis = require(ReplicatedStorage.Packages.Ignis)
 
-local CHANCE_SOUND = 0.065
+local CHANCE_SOUND = 0.075
 local CHANCE_AMOUNT = 3
+local CHECK_INTERVAL = 1 / 60
 
 local SoundsAttachments = (Workspace:WaitForChild("SoundsAttachments")):GetDescendants() :: { Attachment }
 local Sounds = ReplicatedStorage:WaitForChild("Sounds"):WaitForChild("Ambience")
@@ -22,6 +23,7 @@ AmbienceController.ChanceSound = CHANCE_SOUND
 AmbienceController.ChanceAmount = CHANCE_AMOUNT
 
 local RandomizerConnection: RBXScriptConnection?
+local Accumulator = 0
 
 function AmbienceController.PlayRandom()
 	local soundIndex = math.random(1, #RandomSounds)
@@ -43,8 +45,16 @@ function AmbienceController.StartRandomizer()
 	end
 
 	RandomizerConnection = RunService.Heartbeat:Connect(function(dt: number)
-		for _ = 0, AmbienceController.ChanceAmount do
-			if math.random() < (AmbienceController.ChanceSound * dt) then AmbienceController.PlayRandom() end
+		Accumulator += dt
+
+		while Accumulator >= CHECK_INTERVAL do
+			Accumulator -= CHECK_INTERVAL
+
+			for _ = 0, AmbienceController.ChanceAmount do
+				if math.random() < (AmbienceController.ChanceSound * CHECK_INTERVAL) then
+					AmbienceController.PlayRandom()
+				end
+			end
 		end
 	end)
 end

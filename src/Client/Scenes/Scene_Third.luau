@@ -28,6 +28,7 @@ function Scene_Third.Start()
 
 	WaterController.StartRise()
 	EngineController.StartEngine()
+	LeaksController.EnableBlowtorch()
 	DepthController.Start()
 	PressureController.Start()
 
@@ -46,6 +47,7 @@ function Scene_Third.Start()
 				LightController.Start()
 
 				LightController.ChanceToBreak = LightController.CHANCE_TO_BREAK_THIRD
+				ValveController.RightSpeed = ValveController.RIGHT_SPEED_THIRD
 
 				if ValveController.EnabledValvesCount == 0 then
 					ValveController.EnableRandomValve()
@@ -67,6 +69,8 @@ function Scene_Third.Start()
 						halfDebounce = true
 						ValveController.EnableRandomValve()
 						LightController.ChanceToBreak = LightController.CHANCE_TO_BREAK_THIRD_HALF
+						LeaksController.ChanceToBreak = LeaksController.CHANCE_TO_BREAK_THIRD_HALF
+						ValveController.RightSpeed = ValveController.RIGHT_SPEED_THIRD_HALF
 					end
 
 					if new < DepthController.THIRD_DEPTH or debounce then return end

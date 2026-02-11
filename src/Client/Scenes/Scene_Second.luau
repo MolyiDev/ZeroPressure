@@ -58,6 +58,7 @@ function Scene_Second.Start()
 					if not halfDebounce then
 						halfDebounce = true
 						ValveController.EnableRandomValve()
+						ValveController.RightSpeed = ValveController.RIGHT_SPEED_SECOND_HALF
 					end
 
 					if new < DepthController.SECOND_DEPTH or debounce then return end
