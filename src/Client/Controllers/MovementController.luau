@@ -86,7 +86,9 @@ local function moveDirection()
 	local Direction = Tools.WorldMovingDirection(
 		Character.HumanoidRootPart.CFrame:VectorToObjectSpace(Character.Humanoid.MoveDirection)
 	)
+
 	stopAllAnimations(FADE_OUT)
+
 	if Direction == Vector3.zero or TweensController.IsImmobile then return end
 
 	if ShiftTouched then

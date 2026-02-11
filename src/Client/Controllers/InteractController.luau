@@ -13,18 +13,24 @@ local MAX_DISTANCE = 6
 
 local Camera = Workspace.CurrentCamera
 local InteractablesList = CollectionService:GetTagged("Interactable")
-local Interactables: { [BasePart]: boolean } = {}
 local CurrentPart: BasePart?
 local Hold = false
+
 local RayParams = RaycastParams.new()
-RayParams.FilterDescendantsInstances = { InteractablesList }
+RayParams.FilterDescendantsInstances = InteractablesList
 RayParams.FilterType = Enum.RaycastFilterType.Include
 RayParams.IgnoreWater = true
 
-for _, interactable in InteractablesList do
-	if not interactable:IsA("BasePart") then continue end
-	Interactables[interactable] = true
-end
+CollectionService:GetInstanceAddedSignal("Interactable"):Connect(function(instance)
+	InteractablesList[#InteractablesList + 1] = instance
+	RayParams.FilterDescendantsInstances = InteractablesList
+end)
+
+CollectionService:GetInstanceRemovedSignal("Interactable"):Connect(function(instance)
+	local index = table.find(InteractablesList, instance)
+	if index then table.remove(InteractablesList, index) end
+	RayParams.FilterDescendantsInstances = InteractablesList
+end)
 
 local InteractController = {}
 InteractController.TutorialActive = false
@@ -105,7 +111,7 @@ UserInputService.InputBegan:Connect(function(input, gp)
 
 	if object:HasTag("Valve") then
 		Hold = true
-		ValveController.ValveTouched(object)
+		ValveController.ValveTouched(object :: any)
 	elseif object:HasTag("Lever") then
 		Hold = true
 		EngineController.LeverTouched(object)

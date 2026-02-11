@@ -76,6 +76,7 @@ function Scene_Fourth.Start()
 					if new < DepthController.FOURTH_DEPTH / 2 then return end
 
 					if not halfDebounce then
+						halfDebounce = true
 						LightController.ChanceToBreak = LightController.CHANCE_TO_BREAK_FOURTH_HALF
 						LeaksController.ChanceToBreak = LeaksController.CHANCE_TO_BREAK_FOURTH_HALF
 						ValveController.RightSpeed = ValveController.RIGHT_SPEED_FOURTH_HALF
