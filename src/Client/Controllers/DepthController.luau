@@ -1,3 +1,4 @@
+local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -15,11 +16,16 @@ local FOURTH_DEPTH = 1
 
 local DEPTH_SPEED = 0.0001
 
+local OCEAN_COLOR_DEFAULT = Color3.fromRGB(6, 255, 180)
+local OCEAN_COLOR_FINAL = Color3.new()
+
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui") :: PlayerGui
 local DepthSurfaceGui = PlayerGui:WaitForChild("Depth") :: SurfaceGui
 local DepthNameSurfaceGui = PlayerGui:WaitForChild("DepthName") :: SurfaceGui
 local Pivot = DepthSurfaceGui:WaitForChild("Background"):WaitForChild("Pivot") :: Frame
+
+local Atmosphere = Lighting:FindFirstChild("Atmosphere") :: Atmosphere
 
 local DepthController = {}
 DepthController.OnDepthChanged = Signal.new() :: Signal.Signal<number, number>
@@ -34,6 +40,11 @@ local Connection: RBXScriptConnection?
 
 local function changePivotPos(pos: number)
 	Pivot.Position = UDim2.fromScale(0.5, pos)
+end
+
+local function updateAtmosphere()
+	local alpha = DepthController.CurrentDepth / FOURTH_DEPTH
+	Atmosphere.Color = OCEAN_COLOR_DEFAULT:Lerp(OCEAN_COLOR_FINAL, alpha)
 end
 
 function DepthController.Start()
@@ -53,6 +64,7 @@ function DepthController.Start()
 
 		if oldDepth ~= DepthController.CurrentDepth then
 			DepthController.OnDepthChanged:Fire(oldDepth, DepthController.CurrentDepth)
+			updateAtmosphere()
 		end
 
 		changePivotPos(DepthController.CurrentDepth)
@@ -81,6 +93,7 @@ function DepthController.Reset(scene: number)
 		DepthController.CurrentDepth = FOURTH_DEPTH
 	end
 
+	updateAtmosphere()
 	changePivotPos(DepthController.CurrentDepth)
 end
 

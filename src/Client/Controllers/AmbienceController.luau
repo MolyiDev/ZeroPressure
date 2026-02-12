@@ -9,11 +9,11 @@ local CHANCE_SOUND = 0.075
 local CHANCE_AMOUNT = 3
 local CHECK_INTERVAL = 1 / 60
 
-local SoundsAttachments = (Workspace:WaitForChild("SoundsAttachments")):GetDescendants() :: { Attachment }
-local Sounds = ReplicatedStorage:WaitForChild("Sounds"):WaitForChild("Ambience")
-local RandomSounds = Sounds:WaitForChild("Random"):GetDescendants() :: { Sound }
-local AmbienceLoop1 = SoundService:WaitForChild("AmbienceLoop1") :: Sound
-local AmbienceLoop2 = SoundService:WaitForChild("AmbienceLoop2") :: Sound
+local SoundsAttachments = (Workspace:FindFirstChild("SoundsAttachments")):GetDescendants() :: { Attachment }
+local Sounds = ReplicatedStorage:FindFirstChild("Sounds"):FindFirstChild("Ambience")
+local RandomSounds = Sounds:FindFirstChild("Random"):GetDescendants() :: { Sound }
+local AmbienceLoop1 = SoundService:FindFirstChild("AmbienceLoop1") :: Sound
+local AmbienceLoop2 = SoundService:FindFirstChild("AmbienceLoop2") :: Sound
 AmbienceLoop1:Play()
 AmbienceLoop2:Play()
 

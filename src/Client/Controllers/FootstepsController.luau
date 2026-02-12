@@ -7,8 +7,8 @@ local Components = require(ReplicatedStorage.Shared.ECS.Components)
 local World = require(ReplicatedStorage.Shared.ECS.Worlds.World)
 
 local AnimatorConnection: RBXScriptConnection?
-local EffectsGroup = SoundService:WaitForChild("Effects") :: SoundGroup
-local FootstepsSounds = ReplicatedStorage:WaitForChild("Sounds"):WaitForChild("Footsteps") :: { [string]: Sound }
+local EffectsGroup = SoundService:FindFirstChild("Effects") :: SoundGroup
+local FootstepsSounds = ReplicatedStorage:FindFirstChild("Sounds"):FindFirstChild("Footsteps") :: { [string]: Sound }
 local AnimationNames = {
 	RunFront = true,
 	WalkFront = true,

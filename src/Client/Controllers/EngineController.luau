@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local Ignis = require(ReplicatedStorage.Packages.Ignis)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local ESounds = require(ReplicatedStorage.Types.Enums.ESounds)
 local SoundsController = require(script.Parent.SoundsController)
@@ -37,7 +38,11 @@ local HIGH_STRESS_COLOR = Color3.fromRGB(255, 0, 89)
 
 local EngineLight = CollectionService:GetTagged("EngineLight")[1] :: { PointLight: PointLight } & BasePart
 local EngineLever = CollectionService:GetTagged("Lever")[1] :: BasePart
-local Connection: RBXScriptConnection?
+
+local EngineEffectLevel1 = CollectionService:GetTagged("EngineEffectLevel1")[1] :: Attachment
+local EngineEffectLevel2 = CollectionService:GetTagged("EngineEffectLevel2")[1] :: Attachment
+local EngineEffectLevel3Bottom = CollectionService:GetTagged("EngineEffectLevel3Bottom")[1] :: Attachment
+local EngineEffectLevel3Top = CollectionService:GetTagged("EngineEffectLevel3Top")[1] :: Attachment
 
 local EngineController = {}
 EngineController.OnLevelChanged = Signal.new() :: Signal.Signal<LeverLevels, LeverLevels>
@@ -78,7 +83,7 @@ local DEPTH_SENSITIVITY = 0.004
 local function levelChanged(lever: BasePart, oldLevel: LeverLevels, newLevel: LeverLevels)
 	EngineController.OnLevelChanged:Fire(oldLevel, newLevel)
 
-	-- Maybe add some pitch change
+	-- TODO: Add some pitch change
 	SoundsController.Play(ESounds.Lever, lever)
 
 	local targetVol
@@ -192,18 +197,15 @@ function EngineController.LeverStop()
 	currentAlpha = level == "Up" and 1 or (level == "Down" and 0 or 0.5)
 end
 
-function EngineController.StartEngine()
-	if EngineController.IsEngineRunning then return end
-
-	if Connection then
-		Connection:Disconnect()
-		Connection = nil
+local function toggleEffectsAttachment(attachment: Attachment, value: boolean)
+	for _, emitter in attachment:GetDescendants() do
+		if not emitter:IsA("ParticleEmitter") then continue end
+		emitter.Enabled = value
 	end
+end
 
-	EngineController.IsEngineRunning = true
-	SoundsController.PlayLoop(ESounds.EngineLoop, EngineLight, true)
-
-	Connection = RunService.Heartbeat:Connect(function(dt)
+function EngineController.OnStart()
+	RunService.Heartbeat:Connect(function(dt)
 		local oldStress = EngineController.CurrentStress
 		local oldSpeed = EngineController.CurrentSpeed
 
@@ -248,21 +250,47 @@ function EngineController.StartEngine()
 
 		if oldSpeed ~= EngineController.CurrentSpeed then
 			EngineController.OnSpeedChanged:Fire(oldSpeed, EngineController.CurrentSpeed)
+
+			if EngineController.CurrentSpeed == 0 then
+				toggleEffectsAttachment(EngineEffectLevel1, false)
+				toggleEffectsAttachment(EngineEffectLevel2, false)
+				toggleEffectsAttachment(EngineEffectLevel3Bottom, false)
+				toggleEffectsAttachment(EngineEffectLevel3Top, false)
+			elseif EngineController.CurrentSpeed <= EngineController.LevelDownSpeed then
+				toggleEffectsAttachment(EngineEffectLevel1, true)
+				toggleEffectsAttachment(EngineEffectLevel2, false)
+				toggleEffectsAttachment(EngineEffectLevel3Bottom, false)
+				toggleEffectsAttachment(EngineEffectLevel3Top, false)
+			elseif EngineController.CurrentSpeed <= EngineController.LevelMiddleSpeed then
+				toggleEffectsAttachment(EngineEffectLevel1, false)
+				toggleEffectsAttachment(EngineEffectLevel2, true)
+				toggleEffectsAttachment(EngineEffectLevel3Bottom, false)
+				toggleEffectsAttachment(EngineEffectLevel3Top, false)
+			elseif EngineController.CurrentSpeed <= EngineController.LevelUpSpeed then
+				toggleEffectsAttachment(EngineEffectLevel1, false)
+				toggleEffectsAttachment(EngineEffectLevel2, false)
+				toggleEffectsAttachment(EngineEffectLevel3Bottom, true)
+				toggleEffectsAttachment(EngineEffectLevel3Top, true)
+			end
 		end
 	end)
 end
 
+function EngineController.StartEngine()
+	if EngineController.IsEngineRunning then return end
+
+	EngineController.IsEngineRunning = true
+	SoundsController.PlayLoop(ESounds.EngineLoop, EngineLight, true)
+end
+
 function EngineController.StopEngine()
+	if not EngineController.IsEngineRunning then return end
+
 	EngineController.IsEngineRunning = false
-	SoundsController.PlayLoop(ESounds.EngineLoop, EngineLight, false)
+	SoundsController.StopLoop(ESounds.EngineLoop, EngineLight, true)
 end
 
 function EngineController.Reset()
-	if Connection then
-		Connection:Disconnect()
-		Connection = nil
-	end
-
 	EngineController.StopEngine()
 	EngineController.FreeLever()
 
@@ -287,6 +315,4 @@ function EngineController.Reset()
 	EngineLever.CFrame = LEVER_DOWN_CF
 end
 
-EngineController.StartEngine()
-
-return EngineController
+return Ignis.Register(EngineController)

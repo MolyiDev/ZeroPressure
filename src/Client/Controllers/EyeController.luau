@@ -12,11 +12,11 @@ local VISIBLE_CF = CFrame.new(0, 2, 16) * CFrame.Angles(0, math.pi, 0)
 local HIDDEN_CF = CFrame.new(0, -20, 16) * CFrame.Angles(0, math.pi, 0)
 
 local Player = Players.LocalPlayer
-local EyeModel = Workspace:WaitForChild("Eye") :: Model
-local Eye = EyeModel:WaitForChild("Eye") :: BasePart
-local EyelidTop = EyeModel:WaitForChild("EyelidTop") :: MeshPart
-local EyelidBottom = EyeModel:WaitForChild("EyelidBottom") :: MeshPart
-local Light = Eye:WaitForChild("PointLight") :: PointLight
+local EyeModel = Workspace:FindFirstChild("Eye") :: Model
+local Eye = EyeModel:FindFirstChild("Eye") :: BasePart
+local EyelidTop = EyeModel:FindFirstChild("EyelidTop") :: MeshPart
+local EyelidBottom = EyeModel:FindFirstChild("EyelidBottom") :: MeshPart
+local Light = Eye:FindFirstChild("PointLight") :: PointLight
 
 local eyeParts: { BasePart } = {}
 for _, descendant in EyeModel:GetDescendants() do

@@ -40,7 +40,7 @@ local Lights = { MainLight, EngineLight }
 local LightsBroken: { [Light]: boolean } = {}
 local Connection: RBXScriptConnection?
 
-local LightIdleAnim = ReplicatedStorage:WaitForChild("Animations"):WaitForChild("LightIdle")
+local LightIdleAnim = ReplicatedStorage:FindFirstChild("Animations"):FindFirstChild("LightIdle")
 
 local LightIdle: AnimationTrack
 local LightBulb: BasePart

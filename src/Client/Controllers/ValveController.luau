@@ -48,10 +48,10 @@ local Valves = CollectionService:GetTagged("Valve") :: { Valve }
 local CurrentValve: Valve?
 local Connection: RBXScriptConnection?
 
-local ValveEffects = ReplicatedStorage:WaitForChild("Effects"):WaitForChild("Valves") :: Folder
-local ValveLowEffect = ValveEffects:WaitForChild("Low") :: Attachment
-local ValveMediumEffect = ValveEffects:WaitForChild("Medium") :: Attachment
-local ValveHighEffect = ValveEffects:WaitForChild("High") :: Attachment
+local ValveEffects = ReplicatedStorage:FindFirstChild("Effects"):FindFirstChild("Valves") :: Folder
+local ValveLowEffect = ValveEffects:FindFirstChild("Low") :: Attachment
+local ValveMediumEffect = ValveEffects:FindFirstChild("Medium") :: Attachment
+local ValveHighEffect = ValveEffects:FindFirstChild("High") :: Attachment
 
 local ValveStates: {
 	[Valve]: ValveState,

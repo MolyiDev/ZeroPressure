@@ -36,7 +36,7 @@ local SCENE_MODULES: { [number]: TScene.TScene } = table.freeze({
 local ActiveSceneModule: TScene.TScene?
 local InputBeganConnection: RBXScriptConnection?
 
-local SpawnLocation = Workspace:WaitForChild("SpawnLocation")
+local SpawnLocation = Workspace:FindFirstChild("SpawnLocation")
 
 local function startCharacter()
 	MouseController.HideMouse()

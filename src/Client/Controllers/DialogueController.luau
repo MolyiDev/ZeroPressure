@@ -13,7 +13,7 @@ local ECharacters = require(ReplicatedStorage.Types.Enums.ECharacters)
 
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
-local TalkSoundsFolder = ReplicatedStorage:WaitForChild("Sounds"):WaitForChild("Talk") :: Folder
+local TalkSoundsFolder = ReplicatedStorage:FindFirstChild("Sounds"):FindFirstChild("Talk") :: Folder
 
 local BASE_SPEED = 0.04
 local BASE_PITCH = 1.0
@@ -31,7 +31,7 @@ export type Dialogue = {
 
 local CHARACTERS: { [number]: { Sound: Sound } } = {
 	[ECharacters.Radio] = {
-		Sound = TalkSoundsFolder:WaitForChild("Radio") :: Sound,
+		Sound = TalkSoundsFolder:FindFirstChild("Radio") :: Sound,
 	},
 }
 

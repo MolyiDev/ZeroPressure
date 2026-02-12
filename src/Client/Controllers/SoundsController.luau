@@ -6,7 +6,7 @@ local ESounds = require(ReplicatedStorage.Types.Enums.ESounds)
 
 local TW_FADE = TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 
-local SoundsFolder = ReplicatedStorage:WaitForChild("Sounds")
+local SoundsFolder = ReplicatedStorage:FindFirstChild("Sounds")
 
 local SoundsController = {}
 local Sounds: { [number]: Sound } = {}

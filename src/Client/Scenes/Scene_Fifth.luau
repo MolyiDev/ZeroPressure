@@ -22,7 +22,7 @@ type Scene = {
 	CurrentPromise: Promise.Promise?,
 } & TScene.TScene
 
-local MonsterAttachment = Workspace:WaitForChild("Monster") :: Attachment
+local MonsterAttachment = Workspace:FindFirstChild("Monster") :: Attachment
 
 local Scene_Fifth = {} :: Scene
 Scene_Fifth.IsActive = false

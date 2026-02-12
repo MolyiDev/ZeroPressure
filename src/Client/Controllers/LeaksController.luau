@@ -28,13 +28,13 @@ local CHECK_INTERVAL = 1 / 60
 local Player = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
-local EffectsFolder = ReplicatedStorage:WaitForChild("Effects")
-local Colliders = Workspace:WaitForChild("Submarine"):WaitForChild("Colliders") :: Model
+local EffectsFolder = ReplicatedStorage:FindFirstChild("Effects")
+local Colliders = Workspace:FindFirstChild("Submarine"):FindFirstChild("Colliders") :: Model
 local PossibleWaterLeaks = CollectionService:GetTagged("WaterLeak") :: { Attachment }
-local WaterLeaksEffects = EffectsFolder:WaitForChild("WaterLeaks") :: Folder
-local WaterLeakLevel1 = WaterLeaksEffects:WaitForChild("Level1") :: WaterLeak
-local WaterLeakLevel2 = WaterLeaksEffects:WaitForChild("Level2") :: WaterLeak
-local WaterLeakLevel3 = WaterLeaksEffects:WaitForChild("Level3") :: WaterLeak
+local WaterLeaksEffects = EffectsFolder:FindFirstChild("WaterLeaks") :: Folder
+local WaterLeakLevel1 = WaterLeaksEffects:FindFirstChild("Level1") :: WaterLeak
+local WaterLeakLevel2 = WaterLeaksEffects:FindFirstChild("Level2") :: WaterLeak
+local WaterLeakLevel3 = WaterLeaksEffects:FindFirstChild("Level3") :: WaterLeak
 
 local LeaksPerLevel = {
 	[1] = WaterLeakLevel1,
@@ -52,9 +52,9 @@ local CurrentLeaks: { [WaterLeak]: boolean } = {}
 local LeakProgress: { [WaterLeak]: number } = {}
 local FixConnection: RBXScriptConnection?
 
-local BlowtorchAnimations = ReplicatedStorage:WaitForChild("Animations"):WaitForChild("Blowtorch")
-local BlowtorchIdleAnim = BlowtorchAnimations:WaitForChild("Idle")
-local BlowtorchUseAnim = BlowtorchAnimations:WaitForChild("Use")
+local BlowtorchAnimations = ReplicatedStorage:FindFirstChild("Animations"):FindFirstChild("Blowtorch")
+local BlowtorchIdleAnim = BlowtorchAnimations:FindFirstChild("Idle")
+local BlowtorchUseAnim = BlowtorchAnimations:FindFirstChild("Use")
 
 local BlowtorchIdle: AnimationTrack
 local BlowtorchUse: AnimationTrack
