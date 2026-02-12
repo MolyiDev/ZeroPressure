@@ -11,18 +11,14 @@ if not game:IsLoaded() then game.Loaded:Wait() end
 
 local Signal = require(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("Signal"))
 
---== CONSTANTS ==--
 local BATCH_SIZE = 50
 local MAX_PARALLEL_LOADS = 8
 local MAX_FILL_SCALE = 1
 local SPINNER_CHARS = { "\\", "|", "/", "-" }
 
---== STATE ==--
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 local OnCompleted = Signal.new()
-
---== UI SETUP ==--
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "LoadingScreen"
@@ -112,8 +108,6 @@ local UICorner = Instance.new("UICorner")
 UICorner.CornerRadius = UDim.new(0.2, 0)
 UICorner.Parent = Bar
 
---== MASKING SETUP ==--
-
 local Filler = Instance.new("Frame")
 Filler.Name = "Filler"
 Filler.AnchorPoint = Vector2.new(0, 0.5)
@@ -126,7 +120,6 @@ local UICornerFiller = Instance.new("UICorner")
 UICornerFiller.CornerRadius = UDim.new(0.2, 0)
 UICornerFiller.Parent = Filler
 
--- 1. White Text (Static in Bar)
 local QuantityLoaded_White = Instance.new("TextLabel")
 QuantityLoaded_White.Name = "QuantityLoaded_White"
 QuantityLoaded_White.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -141,7 +134,6 @@ QuantityLoaded_White.TextScaled = true
 QuantityLoaded_White.ZIndex = 1
 QuantityLoaded_White.Parent = Bar
 
--- 2. Container to counteract Filler scaling
 local MaskContainer = Instance.new("Frame")
 MaskContainer.Name = "MaskContainer"
 MaskContainer.BackgroundTransparency = 1
@@ -150,7 +142,6 @@ MaskContainer.Position = UDim2.fromScale(0, 0.5)
 MaskContainer.Size = UDim2.fromScale(0, 1)
 MaskContainer.Parent = Filler
 
--- 3. Black Text (Inside MaskContainer)
 local QuantityLoaded_Black = QuantityLoaded_White:Clone()
 QuantityLoaded_Black.Name = "QuantityLoaded_Black"
 QuantityLoaded_Black.TextColor3 = Color3.new(0, 0, 0)
@@ -163,11 +154,8 @@ Info.Parent = CanvasGroup
 CanvasGroup.Parent = ScreenGui
 ScreenGui.Parent = PlayerGui
 
---== LOADING LOGIC ==--
-
 local assets = {}
 
--- Flat gather (recursive not strictly needed for basic preloading unless deep hierarchy is dynamically added)
 local function gatherAssets(root)
 	for _, desc in root:GetDescendants() do
 		assets[#assets + 1] = desc
@@ -190,23 +178,15 @@ for i = 1, #assets, BATCH_SIZE do
 	table.insert(batches, batch)
 end
 
---== VISUAL HELPERS ==--
-
--- Centralized function to update Bar AND Mask
--- This ensures the black text stays aligned regardless of bar size
 local function UpdateBarVisuals(scale)
 	Filler.Size = UDim2.fromScale(scale, 1)
 
 	if scale > 0.001 then
-		-- Inverse scale: If Filler is 0.5 width of Bar, MaskContainer must be 2.0 width of Filler
-		-- to match the original Bar width.
 		MaskContainer.Size = UDim2.fromScale(MAX_FILL_SCALE / scale, 1)
 	else
 		MaskContainer.Size = UDim2.fromScale(0, 1)
 	end
 end
-
---== EXECUTION ==--
 
 task.spawn(function()
 	if #batches == 0 then
@@ -232,31 +212,25 @@ task.spawn(function()
 	end
 end)
 
---== ANIMATION LOOP ==--
-
 local spinnerIndex = 1
 local lastSpinnerUpdate = 0
 local patternOffset = 0
 local connection
 
-connection = RunService.RenderStepped:Connect(function(dt)
-	-- Text Update
+connection = RunService.RenderStepped:Connect(function(dt: number)
 	local text = string.format("%d / %d", math.min(loadedCount, maxAssets), maxAssets)
 	QuantityLoaded_White.Text = text
 	QuantityLoaded_Black.Text = text
 
-	-- Bar Interpolation
 	local targetScale = (loadedCount / math.max(maxAssets, 1)) * MAX_FILL_SCALE
 	local currentScale = Filler.Size.X.Scale
 	local newScale = currentScale + (targetScale - currentScale) * (dt * 5)
 
 	UpdateBarVisuals(newScale)
 
-	-- Pattern Move
 	patternOffset = (patternOffset + (0.5 * (dt * 60))) % 128
 	Pattern.Position = UDim2.fromOffset(-patternOffset, -patternOffset)
 
-	-- Spinner
 	lastSpinnerUpdate += dt
 	if lastSpinnerUpdate >= 0.15 then
 		lastSpinnerUpdate = 0
@@ -266,15 +240,13 @@ connection = RunService.RenderStepped:Connect(function(dt)
 end)
 
 OnCompleted:Wait()
-connection:Disconnect() -- Stop the loop so we can force set values
+connection:Disconnect()
 
--- Force Final State (Fixes the "not fully filled" issue)
 UpdateBarVisuals(MAX_FILL_SCALE)
 QuantityLoaded_White.Text = "Done!"
 QuantityLoaded_Black.Text = "Done!"
 LoadingLabel.Text = "Loaded!"
 
--- Fade Out
 local fadeTween = TweenService:Create(CanvasGroup, TweenInfo.new(0.8, Enum.EasingStyle.Quad), { GroupTransparency = 1 })
 fadeTween:Play()
 fadeTween.Completed:Wait()
