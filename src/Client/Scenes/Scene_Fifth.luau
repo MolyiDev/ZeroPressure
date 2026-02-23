@@ -38,7 +38,7 @@ function Scene_Fifth.Start()
 	PressureController.Stop()
 	LeaksController.StopRandomizer()
 	ValveController.DisableAllValves()
-	LightController.Stop()
+	LightController.StopRandomizer()
 	EyeController.Reset()
 	EyeController.Close()
 

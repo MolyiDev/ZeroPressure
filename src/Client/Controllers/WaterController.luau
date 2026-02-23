@@ -16,7 +16,7 @@ local WAVE_AMPLITUDE = 0.0001
 local WAVE_FREQUENCY = 1.2
 local WAVE_SCALE = 3.5
 local MIN_WATER_LEVEL = -3.06
-local MAX_WATER_LEVEL = 1.7
+local MAX_WATER_LEVEL = 0.75
 
 local WaterMesh
 local WaterMeshPart
@@ -70,7 +70,6 @@ local function CreateWaterMesh()
 
 	WaterMesh = result
 	local gridSize = 20
-	local planeSize = 40
 
 	local tempVertexLookup = {}
 

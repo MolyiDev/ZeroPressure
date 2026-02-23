@@ -153,6 +153,8 @@ local function computeShakeOffset(): CFrame
 	return CFrame.new(totalPos) * CFrame.Angles(math.rad(totalRot.X), math.rad(totalRot.Y), math.rad(totalRot.Z))
 end
 
+CameraController.LockCamera()
+
 CameraController.OnCharacterAdded = function(character: TCharacter.TCharacter, characterEntity: jecs.Entity)
 	local butler = World:get(characterEntity, Components.Butler)
 	root = World:get(characterEntity, Components.HumanoidRootPart) :: BasePart

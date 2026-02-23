@@ -44,7 +44,7 @@ function Scene_Third.Start()
 			return Promise.new(function(resolve, _, onCancel)
 				LeaksController.EnableBlowtorch()
 				LeaksController.StartRandomizer()
-				LightController.Start()
+				LightController.StartRandomizer()
 
 				LightController.ChanceToBreak = LightController.CHANCE_TO_BREAK_THIRD
 				ValveController.RightSpeed = ValveController.RIGHT_SPEED_THIRD

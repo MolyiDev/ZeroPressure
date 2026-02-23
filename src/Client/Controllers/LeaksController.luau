@@ -98,6 +98,7 @@ end
 function LeaksController.StartRandomizer()
 	if LeaksController.IsRandomizerActive then return end
 	LeaksController.IsRandomizerActive = true
+	Accumulator = 0
 
 	if RandomizerConnection then
 		RandomizerConnection:Disconnect()
@@ -109,6 +110,7 @@ function LeaksController.StartRandomizer()
 
 		while Accumulator >= CHECK_INTERVAL do
 			Accumulator -= CHECK_INTERVAL
+
 			for _ = 0, LeaksController.ChanceBreakAmount do
 				if math.random() < (LeaksController.ChanceToBreak * CHECK_INTERVAL) then
 					LeaksController.BreakRandom()

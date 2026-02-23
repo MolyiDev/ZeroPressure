@@ -319,15 +319,6 @@ function ValveController.OnStart()
 	end)
 end
 
-function ValveController.Stop()
-	if Connection then
-		Connection:Disconnect()
-		Connection = nil
-	end
-
-	table.clear(ValveStates)
-end
-
 function ValveController.Reset()
 	ValveController.LowValvesCount = 0
 	ValveController.MediumValvesCount = 0

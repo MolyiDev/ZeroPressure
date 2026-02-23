@@ -38,7 +38,7 @@ local EngineLight = CollectionService:GetTagged("EngineLight")[1] :: Light
 local Lightbulbs = CollectionService:GetTagged("Lightbulbs")[1] :: BasePart
 local Lights = { MainLight, EngineLight }
 local LightsBroken: { [Light]: boolean } = {}
-local Connection: RBXScriptConnection?
+local RandomizerConnection: RBXScriptConnection?
 
 local LightIdleAnim = ReplicatedStorage:FindFirstChild("Animations"):FindFirstChild("LightIdle")
 
@@ -64,15 +64,17 @@ LightController.LightbulbCage = CollectionService:GetTagged("Lightbulbs")[1]
 
 local Accumulator = 0
 
-function LightController.Start()
+function LightController.StartRandomizer()
 	if LightController.IsActive then return end
+	LightController.IsActive = true
+	Accumulator = 0
 
-	if Connection then
-		Connection:Disconnect()
-		Connection = nil
+	if RandomizerConnection then
+		RandomizerConnection:Disconnect()
+		RandomizerConnection = nil
 	end
 
-	Connection = RunService.Heartbeat:Connect(function(dt: number)
+	RandomizerConnection = RunService.Heartbeat:Connect(function(dt: number)
 		Accumulator += dt
 
 		while Accumulator >= CHECK_INTERVAL do
@@ -80,7 +82,6 @@ function LightController.Start()
 
 			for _, light in Lights do
 				if LightsBroken[light] then continue end
-
 				if math.random() < (LightController.ChanceToBreak * CHECK_INTERVAL) then
 					LightController.Break(light)
 				end
@@ -89,10 +90,10 @@ function LightController.Start()
 	end)
 end
 
-function LightController.Stop()
-	if Connection then
-		Connection:Disconnect()
-		Connection = nil
+function LightController.StopRandomizer()
+	if RandomizerConnection then
+		RandomizerConnection:Disconnect()
+		RandomizerConnection = nil
 	end
 
 	LightController.IsActive = false
@@ -214,7 +215,7 @@ function LightController.Reset()
 	table.clear(LightsBroken)
 	LightController.ChanceToBreak = CHANCE_TO_BREAK_DEFAULT
 	LightController.RemoveBulb()
-	LightController.Stop()
+	LightController.StopRandomizer()
 end
 
 LightController.OnCharacterAdded = function(character: TCharacter.TCharacter, characterEntity: jecs.Entity)

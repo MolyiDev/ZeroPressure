@@ -33,7 +33,7 @@ function Scene_Fourth.Start()
 	PressureController.Start()
 	LeaksController.StopRandomizer()
 	ValveController.DisableAllValves()
-	LightController.Stop()
+	LightController.StopRandomizer()
 
 	Scene_Fourth.CurrentPromise = Promise.delay(0.5)
 		:andThen(function()
@@ -57,7 +57,7 @@ function Scene_Fourth.Start()
 				EngineController.StartEngine()
 				LeaksController.EnableBlowtorch()
 				LeaksController.StartRandomizer()
-				LightController.Start()
+				LightController.StartRandomizer()
 				ValveController.EnableAllValves()
 
 				EngineController.LevelUpSpeed = EngineController.LEVEL_UP_SPEED_FOURTH

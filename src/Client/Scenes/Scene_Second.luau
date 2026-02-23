@@ -44,7 +44,7 @@ function Scene_Second.Start()
 				EngineController.LevelMiddleSpeed = EngineController.LEVEL_MIDDLE_SPEED * 2
 				EngineController.LevelDownSpeed = EngineController.LEVEL_DOWN_SPEED * 2
 
-				LightController.Start()
+				LightController.StartRandomizer()
 
 				ValveController.EnableRandomValve()
 
